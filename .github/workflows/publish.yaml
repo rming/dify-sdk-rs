@@ -1,0 +1,22 @@
+name: Publish to Cargo
+
+on:
+  push:
+    branches: [dev]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    name: "publish"
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - uses: katyo/publish-crates@v2
+        with:
+          registry-token: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+          path: "./dify-client"
+          args: --no-verify
+          dry-run: true
