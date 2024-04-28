@@ -40,9 +40,8 @@ fn test_new_client_with_config() {
 }
 
 fn get_client(api_key: Option<&str>) -> Client {
-    dotenvy::dotenv().expect(".env file not found");
-    let dify_base_url = env::var("DIFY_BASE_URL").expect("DIFY_BASE_URL is not set in .env file");
-    let dify_api_key = env::var("DIFY_API_KEY").expect("DIFY_API_KEY is not set in .env file");
+    let dify_base_url = env::var("DIFY_BASE_URL").expect("DIFY_BASE_URL is not set");
+    let dify_api_key = env::var("DIFY_API_KEY").expect("DIFY_API_KEY is not set");
     let dify_api_key = api_key.unwrap_or(dify_api_key.as_str());
     Client::new_with_config(Config {
         base_url: dify_base_url,

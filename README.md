@@ -15,11 +15,11 @@ dify-client = "0.1.0"
 
 ## Test
 
-To run the tests, you need to set the `DIFY_API_KEY` and `DIFY_BASE_URL` environment variables. You can do this by creating a `.env` file in the root of the project and adding the following:
+To run the tests, you need to set the `DIFY_API_KEY` and `DIFY_BASE_URL` environment variables.
 
-```env
-DIFY_API_KEY=your_api_key
-DIFY_BASE_URL=https://api.dify.io
+```bash
+export DIFY_API_KEY=your_api_key
+export DIFY_BASE_URL=https://api.dify.io
 ```
 
 Then you can run the tests with:
