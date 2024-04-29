@@ -4,17 +4,23 @@ version = "0.1.1"
 edition = "2021"
 description = "A client for the Dify API"
 license = "Apache-2.0"
+repository = "https://github.com/rming/dify-sdk-rs"
+homepage = "https://docs.dify.ai"
+documentation = "https://docs.rs/dify-client"
+categories = ["api-bindings", "web-programming::http-client"]
+keywords = ["dify", "sdk", "llm", "api", "async"]
 
 [dependencies]
-anyhow = "1.0.75"
-reqwest = { version = "0.12.3", features = ["json", "multipart", "stream"] }
-eventsource-stream = "0.2.3"
-serde = { version = "1.0.198", features = ["derive"] }
-serde_json = "1.0.116"
-serde_with = "3.7.0"
-bytes = "1.6.0"
-infer = "0.15.0"
+anyhow = "1.0"
+bytes = "1"
+eventsource-stream = "0.2"
 futures = "0.3"
+infer = "0.15"
+release-plz = "0.3.64"
+reqwest = { version = "0.12", features = ["json", "multipart", "stream"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_with = "3.7"
 
 [dev-dependencies]
-tokio = { version = "1.33.0", features = ["macros"] }
+tokio = { version = "1", features = ["macros"] }
