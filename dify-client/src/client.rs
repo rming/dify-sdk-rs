@@ -343,7 +343,7 @@ impl Client {
         callback: F,
     ) -> Result<Vec<T>>
     where
-        F: Fn(ChatMessageSteamEvent) -> Result<Option<T>> + Send + Sync,
+        F: Fn(SteamMessageEvent) -> Result<Option<T>> + Send + Sync,
     {
         req_data.response_mode = ResponseMode::Streaming;
 
@@ -355,7 +355,7 @@ impl Client {
         while let Some(event) = stream.next().await {
             let event = event?;
             if event.event == "message" {
-                match serde_json::from_str::<ChatMessageSteamEvent>(&event.data) {
+                match serde_json::from_str::<SteamMessageEvent>(&event.data) {
                     Ok(msg_event) => {
                         if let Some(answer) = callback(msg_event)? {
                             ret.push(answer);
@@ -783,5 +783,51 @@ impl Client {
         } else {
             bail!(text)
         }
+    }
+
+    /// Sends a request to run workflows from the Dify API and returns the response as a stream.
+    /// The callback function is called for each event in the stream.
+    /// The callback function should return `Some(T)` if the event is processed successfully, otherwise `None`.
+    /// The function returns a vector of the processed events.
+    /// The stream is stopped when the callback function returns an error or the stream ends.
+    ///
+    /// # Arguments
+    /// * `req_data` - The workflows run request data.
+    /// * `callback` - The callback function to process the stream events.
+    ///
+    /// # Returns
+    /// A `Result` containing the processed events or an error.
+    ///
+    /// # Errors
+    /// Returns an error if the request cannot be created or the stream fails.
+    pub async fn workflows_run_stream<F, T>(
+        &self,
+        mut req_data: WorkflowsRunRequest,
+        callback: F,
+    ) -> Result<Vec<T>>
+    where
+        F: Fn(SteamMessageEvent) -> Result<Option<T>> + Send + Sync,
+    {
+        req_data.response_mode = ResponseMode::Streaming;
+
+        let req = self.create_workflows_run_request(req_data)?;
+        let resp = self.http_client.execute(req).await?;
+        let mut stream = resp.bytes_stream().eventsource();
+
+        let mut ret: Vec<T> = Vec::new();
+        while let Some(event) = stream.next().await {
+            let event = event?;
+            if event.event == "message" {
+                match serde_json::from_str::<SteamMessageEvent>(&event.data) {
+                    Ok(msg_event) => {
+                        if let Some(answer) = callback(msg_event)? {
+                            ret.push(answer);
+                        }
+                    }
+                    Err(e) => bail!("data: {}, error: {}", event.data, e),
+                };
+            }
+        }
+        Ok(ret)
     }
 }

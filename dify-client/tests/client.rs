@@ -1,9 +1,5 @@
 use anyhow::Result;
-use dify_client::{
-    request,
-    response::{self, ChatMessageSteamEvent},
-    Client, Config,
-};
+use dify_client::{request, response, Client, Config};
 use std::{collections::HashMap, env, time::Duration};
 
 #[test]
@@ -95,17 +91,14 @@ async fn test_chat_message_stream() {
     };
 
     let result = client
-        .chat_messages_stream(msg, |e| match e {
-            ChatMessageSteamEvent::Message {
-                answer,
-                base: _,
-                id: _,
-                task_id: _,
-                extra: _,
-            } => {
-                return Ok(Some(answer));
+        .chat_messages_stream(msg, |e| {
+            println!("{:?}", e);
+            match e {
+                response::SteamMessageEvent::Message { answer, .. } => {
+                    return Ok(Some(answer));
+                }
+                _ => Ok(None),
             }
-            _ => Ok(None),
         })
         .await;
     // println!("{:?}", result);
@@ -129,9 +122,9 @@ fn assert_chat_message_result(result: Result<response::ChatMessageResponse>) {
         let response = result.unwrap();
         println!("{:}", serde_json::to_string_pretty(&response).unwrap());
         assert_eq!(response.event, "message");
+        assert_eq!(response.mode, response::AppMode::AdvancedChat);
         assert!(!response.base.message_id.is_empty());
         assert!(!response.base.conversation_id.is_empty());
-        assert_eq!(response.mode, response::AppMode::AdvancedChat);
     }
 }
 
@@ -330,4 +323,42 @@ async fn test_workflows_run() {
     assert!(result.is_ok());
     let response = result.unwrap();
     println!("{:}", serde_json::to_string_pretty(&response).unwrap());
+}
+
+#[tokio::test]
+async fn test_workflows_run_stream() {
+    let client = get_client(Some("app-hxBGNNbzVsl46o20NPvSYOxB"));
+    let s = r#"Hi, Gu from Dify here. I couldn't be more excited to share with you our latest feature: Workflow.
+We've all seen the huge potential of LLMs in the past year. But as many of you have experienced firsthand, harnessing that potential for robust, production-ready solutions comes with its own set of challenges. Workflow is our answer to that challenge -- it is designed to bridge the gap where single-prompt LLMs falter: generating predictable outputs with multi-step logic. 
+Workflow is currently accessible as a standalone app type. It can also be activated in 'Chatbot' apps for building complex conversation flows (Chatflow). We can't wait for you to start experimenting with it now.
+Chatflow is set to overtake "expert mode" in current Chatbot apps. You may choose to keep editing your existing apps in "expert mode", or transform them into workflows. "#;
+    let msg = request::WorkflowsRunRequest {
+        inputs: HashMap::from([
+            ("input".into(), s.into()),
+            ("summaryStyle".into(), "General Overview".into()),
+        ]),
+        user: "afa".into(),
+        ..Default::default()
+    };
+
+    let result = client
+        .workflows_run_stream(msg, |e| {
+            println!("{:?}", e);
+            match e {
+                response::SteamMessageEvent::WorkflowFinished { data, .. } => {
+                    let output = data
+                        .outputs
+                        .map(|o| o["output"].as_str().map(|s| s.to_owned()))
+                        .flatten();
+                    Ok(output)
+                }
+                _ => Ok(None),
+            }
+        })
+        .await;
+    println!("{:?}", result);
+    assert!(result.is_ok());
+    let answers = result.unwrap();
+    let answer = answers.concat();
+    println!("{:?}", answer);
 }
