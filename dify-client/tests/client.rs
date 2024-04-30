@@ -85,7 +85,7 @@ async fn test_chat_message_simple() {
 async fn test_chat_message_stream() {
     let client = get_client_default();
     let msg = request::ChatMessageRequest {
-        query: "写一段关于人性的500字小作文".into(),
+        query: "write a story in 100 words about life".into(),
         user: "afa".into(),
         ..Default::default()
     };
@@ -307,10 +307,10 @@ async fn test_files_upload() {
 #[tokio::test]
 async fn test_workflows_run() {
     let client = get_client(Some("app-hxBGNNbzVsl46o20NPvSYOxB"));
-    let s = r#"4月29日，外交部发言人林剑主持例行记者会。
-有记者提问两个问题，第一个，马斯克访华后，国内会否允许特斯拉的完全自动驾驶科技（FSD）在国内运行？第二，请问您能否确认，中国气候变化事务特使刘振民将于下周访问美国华盛顿？
-林剑回应，关于你提到的第一个问题，中国国务院总理李强会见了马斯克，中国有关机构也同马斯克进行了相关的会谈，中方已经发布了消息稿，你可以查阅。作为原则，我愿再次重申，中国致力于高质量发展，坚定奉行合作、共赢的开放战略，持续建设市场化、法治化、国际化的一流营商环境，积极促进外商投资，高度重视外资企业的相关诉求，切实保护外资企业的合法权益。我们对内外资企业一视同仁、平等相待，欢迎外资企业继续深化对华合作，共享中国经济发展成果，也希望外资企业遵守中国的法律法规，履行安全承诺。
-他表示，关于你提到的第二个问题，中国气候变化事务特使与美国总统国际气候政策高级顾问一直保持着密切沟通。至于你所说到的访问，目前我没有更多的信息可以提供。"#;
+    let s = r#"Hi, Gu from Dify here. I couldn't be more excited to share with you our latest feature: Workflow.
+We've all seen the huge potential of LLMs in the past year. But as many of you have experienced firsthand, harnessing that potential for robust, production-ready solutions comes with its own set of challenges. Workflow is our answer to that challenge -- it is designed to bridge the gap where single-prompt LLMs falter: generating predictable outputs with multi-step logic. 
+Workflow is currently accessible as a standalone app type. It can also be activated in 'Chatbot' apps for building complex conversation flows (Chatflow). We can't wait for you to start experimenting with it now.
+Chatflow is set to overtake "expert mode" in current Chatbot apps. You may choose to keep editing your existing apps in "expert mode", or transform them into workflows. "#;
     let msg = request::WorkflowsRunRequest {
         inputs: HashMap::from([
             ("input".into(), s.into()),
