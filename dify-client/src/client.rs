@@ -124,12 +124,10 @@ impl Client {
     /// Creates a new `Client` instance with the specified base URL and API key.
     ///
     /// # Arguments
-    ///
     /// * `base_url` - The base URL of the Dify API.
     /// * `api_key` - The API key for authentication.
     ///
     /// # Returns
-    ///
     /// A new `Client` instance.
     pub fn new(base_url: &str, api_key: &str) -> Self {
         Self::new_with_config(Config {
@@ -142,11 +140,9 @@ impl Client {
     /// Creates a new `Client` instance with the specified configuration.
     ///
     /// # Arguments
-    ///
     /// * `c` - The configuration for the client.
     ///
     /// # Returns
-    ///
     /// A new `Client` instance.
     pub fn new_with_config(c: Config) -> Self {
         let mut client = reqwest::ClientBuilder::new();
@@ -164,11 +160,9 @@ impl Client {
     /// Builds the API request URL.
     ///
     /// # Arguments
-    ///
     /// * `api_path` - The API path.
     ///
     /// # Returns
-    ///
     /// The request URL.
     fn build_request_api(&self, api_path: ApiPath) -> String {
         self.config.base_url.trim_end_matches("/").to_string() + api_path.as_str()
@@ -177,15 +171,12 @@ impl Client {
     /// Sets the headers for a request with JSON content type.
     ///
     /// # Arguments
-    ///
     /// * `headers` - The headers to set.
     ///
     /// # Returns
-    ///
     /// A `Result` containing the request or an error.
     ///
     /// # Errors
-    ///
     /// Returns an error if the headers cannot be set.
     fn set_headers_json(&self, headers: &mut HeaderMap) {
         headers.insert(CACHE_CONTROL, HeaderValue::from_static("no-cache"));
@@ -198,19 +189,15 @@ impl Client {
     /// Sets the headers for a request with bearer authentication.
     ///
     /// # Arguments
-    ///
     /// * `headers` - The headers to set.
     ///
     /// # Returns
-    ///
     /// A `Result` containing the request or an error.
     ///
     /// # Errors
-    ///
     /// Returns an error if the headers cannot be set.
     ///
     /// # Panics
-    ///
     /// Panics if the API key is not set.
     fn set_headers_bearer_auth(&self, headers: &mut HeaderMap) {
         headers.insert(
@@ -222,21 +209,17 @@ impl Client {
     /// Creates a request with the specified URL, method, and data.
     ///
     /// # Arguments
-    ///
     /// * `url` - The URL for the request.
     /// * `method` - The HTTP method for the request.
     /// * `data` - The data for the request.
     ///
     /// # Returns
-    ///
     /// A `Result` containing the request or an error.
     ///
     /// # Errors
-    ///
     /// Returns an error if the request cannot be created.
     ///
     /// # Panics
-    ///
     /// Panics if the method is not supported.
     fn create_request(&self, url: String, method: Method, data: impl Serialize) -> Result<Request> {
         let mut headers = HeaderMap::new();
@@ -279,12 +262,10 @@ impl Client {
     /// Creates a form request with the specified URL and data.
     ///
     /// # Arguments
-    ///
     /// * `url` - The URL for the request.
     /// * `data` - The data for the request.
     ///
     /// # Returns
-    ///
     /// A `Result` containing the request or an error.
     fn create_multipart_request(&self, url: String, form_data: multipart::Form) -> Result<Request> {
         let mut headers = HeaderMap::new();
@@ -302,15 +283,12 @@ impl Client {
     /// Creates a chat message request.
     ///
     /// # Arguments
-    ///
     /// * `req` - The chat message request data.
     ///
     /// # Returns
-    ///
     /// A `Result` containing the request or an error.
     ///
     /// # Errors
-    ///
     /// Returns an error if the request cannot be created.
     fn create_chat_message_request(&self, req: ChatMessageRequest) -> Result<Request> {
         let url = self.build_request_api(ApiPath::ChatMessages);
@@ -320,11 +298,9 @@ impl Client {
     /// Sends a chat message request to the Dify API and returns the response.
     ///
     /// # Arguments
-    ///
     /// * `req_data` - The chat message request data.
     ///
     /// # Returns
-    ///
     /// A `Result` containing the chat message response or an error.
     pub async fn chat_messages(
         &self,
@@ -357,11 +333,9 @@ impl Client {
     /// * `callback` - The callback function to process the stream events.
     ///
     /// # Returns
-    ///
     /// A `Result` containing the processed events or an error.
     ///
     /// # Errors
-    ///
     /// Returns an error if the request cannot be created or the stream fails.
     pub async fn chat_messages_stream<F, T>(
         &self,
@@ -400,11 +374,9 @@ impl Client {
     /// 上传的文件仅供当前终端用户使用。  
     ///
     /// # Arguments
-    ///
     /// * `req_data` - The files upload request data.
     ///
     /// # Returns
-    ///
     /// A `Result` containing the files upload response or an error.
     pub async fn files_upload(&self, req_data: FilesUploadRequest) -> Result<FilesUploadResponse> {
         if !infer::is_image(&req_data.file) {
@@ -435,11 +407,9 @@ impl Client {
     /// Sends a request to stop stream chat messages to the Dify API and returns the response.
     ///
     /// # Arguments
-    ///
     /// * `req_data` - The chat message stop request data.
     ///
     /// # Returns
-    ///
     /// A `Result` containing the chat message stop response or an error.
     pub async fn chat_messages_stop(
         &self,
@@ -469,11 +439,9 @@ impl Client {
     /// Sends a request to retrieve suggested messages from the Dify API and returns the response.
     ///
     /// # Arguments
-    ///
     /// * `req_data` - The messages suggested request data.
     ///
     /// # Returns
-    ///
     /// A `Result` containing the messages suggested response or an error.
     pub async fn messages_suggested(
         &self,
@@ -504,11 +472,9 @@ impl Client {
     /// Sends a request to retrieve messages feedbacks from the Dify API and returns the response.
     ///
     /// # Arguments
-    ///
     /// * `req_data` - The messages feedbacks request data.
     ///
     /// # Returns
-    ///
     /// A `Result` containing the messages feedbacks response or an error.
     pub async fn messages_feedbacks(
         &self,
@@ -538,11 +504,9 @@ impl Client {
     /// Sends a request to retrieve conversations from the Dify API and returns the response.
     ///
     /// # Arguments
-    ///
     /// * `req_data` - The conversations request data.
     ///
     /// # Returns
-    ///
     /// A `Result` containing the conversations response or an error.
     pub async fn conversations(
         &self,
@@ -570,11 +534,9 @@ impl Client {
     /// Sends a request to retrieve history messages from the Dify API and returns the response.
     ///
     /// # Arguments
-    ///
     /// * `req_data` - The messages request data.
     ///
     /// # Returns
-    ///
     /// A `Result` containing the messages response or an error.
     pub async fn messages(&self, req_data: MessagesRequest) -> Result<MessagesResponse> {
         if req_data.conversation_id.is_empty() {
@@ -598,11 +560,9 @@ impl Client {
     /// Sends a request to rename a conversation in the Dify API and returns the response.
     ///
     /// # Arguments
-    ///
     /// * `req_data` - The conversations rename request data.
     ///
     /// # Returns
-    ///
     /// A `Result` containing the conversations rename response or an error.
     pub async fn conversations_renaming(
         &self,
@@ -632,6 +592,13 @@ impl Client {
         }
     }
 
+    /// Sends a request to delete a conversation in the Dify API and returns the response.
+    ///
+    /// # Arguments
+    /// * `req_data` - The conversations delete request data.
+    ///
+    /// # Returns
+    /// A `Result` containing the conversations delete response or an error.
     pub async fn conversations_delete(
         &self,
         mut req_data: ConversationsDeleteRequest,
@@ -663,11 +630,9 @@ impl Client {
     /// Sends a request to convert audio to text in the Dify API and returns the response.
     ///
     /// # Arguments
-    ///
     /// * `req_data` - The audio to text request data.
     ///
     /// # Returns
-    ///
     /// A `Result` containing the audio to text response or an error.
     pub async fn text_to_audio(&self, req_data: TextToAudioRequest) -> Result<Bytes> {
         if req_data.text.is_empty() {
@@ -700,11 +665,9 @@ impl Client {
     /// Sends a request to convert audio to text in the Dify API and returns the response.
     ///
     /// # Arguments
-    ///
     /// * `req_data` - The audio to text request data.
     ///
     /// # Returns
-    ///
     /// A `Result` containing the audio to text response or an error.
     pub async fn audio_to_text(&self, req_data: AudioToTextRequest) -> Result<AudioToTextResponse> {
         if !infer::is_audio(&req_data.file) {
@@ -735,11 +698,9 @@ impl Client {
     /// Sends a request to retrieve parameters from the Dify API and returns the response.
     ///
     /// # Arguments
-    ///
     /// * `req_data` - The parameters request data.
     ///
     /// # Returns
-    ///
     /// A `Result` containing the parameters response or an error.
     pub async fn parameters(&self, req_data: ParametersRequest) -> Result<ParametersResponse> {
         if req_data.user.is_empty() {
@@ -763,11 +724,9 @@ impl Client {
     /// Sends a request to retrieve meta information from the Dify API and returns the response.
     ///
     /// # Arguments
-    ///
     /// * `req_data` - The meta request data.
     ///
     /// # Returns
-    ///
     /// A `Result` containing the meta response or an error.
     pub async fn meta(&self, req_data: MetaRequest) -> Result<MetaResponse> {
         if req_data.user.is_empty() {

@@ -25,26 +25,9 @@ pub struct ResultResponse {
     pub result: String,
 }
 
-/// 发送对话消息的响应
+/// 消息基础信息
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ChatMessageResponse {
-    pub event: String,
-    /// 消息唯一 ID
-    pub message_id: String,
-    /// 会话 ID
-    pub conversation_id: String,
-    /// App 模式
-    pub mode: AppMode,
-    /// 完整回复内容
-    pub answer: String,
-    /// 消息创建时间戳，如：1705395332
-    pub created_at: u64,
-    /// 元数据
-    pub metadata: HashMap<String, JsonValue>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct EventBase {
+pub struct MessageBase {
     /// 消息唯一 ID
     pub message_id: String,
     /// 会话 ID
@@ -53,13 +36,30 @@ pub struct EventBase {
     pub created_at: u64,
 }
 
+/// 发送对话消息的响应
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ChatMessageResponse {
+    /// 消息基础信息
+    #[serde(flatten)]
+    pub base: MessageBase,
+    /// 事件
+    pub event: String,
+    /// App 模式
+    pub mode: AppMode,
+    /// 完整回复内容
+    pub answer: String,
+    /// 元数据
+    pub metadata: HashMap<String, JsonValue>,
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "event", rename_all = "snake_case")]
 pub enum ChatMessageSteamEvent {
     /// LLM 返回文本块事件，即：完整的文本以分块的方式输出。
     Message {
+        /// 消息基础信息
         #[serde(flatten)]
-        base: EventBase,
+        base: MessageBase,
         /// 消息 ID
         id: String,
         /// 任务 ID，用于请求跟踪和下方的停止响应接口
@@ -71,8 +71,9 @@ pub enum ChatMessageSteamEvent {
     },
     /// 文件事件，表示有新文件需要展示
     MessageFile {
+        /// 消息基础信息
         #[serde(flatten)]
-        base: EventBase,
+        base: MessageBase,
         /// 文件唯一 ID
         id: String,
         /// 文件类型，目前仅为 image
@@ -88,8 +89,9 @@ pub enum ChatMessageSteamEvent {
 
     /// 消息结束事件，收到此事件则代表流式返回结束。
     MessageEnd {
+        /// 消息基础信息
         #[serde(flatten)]
-        base: EventBase,
+        base: MessageBase,
         /// 消息 ID
         id: String,
         /// 任务 ID，用于请求跟踪和下方的停止响应接口
@@ -102,8 +104,9 @@ pub enum ChatMessageSteamEvent {
     /// 消息内容替换事件  
     /// 开启内容审查和审查输出内容时，若命中了审查条件，则会通过此事件替换消息内容为预设回复。
     MessageReplace {
+        /// 消息基础信息
         #[serde(flatten)]
-        base: EventBase,
+        base: MessageBase,
         /// 任务 ID，用于请求跟踪和下方的停止响应接口
         task_id: String,
         /// 替换内容（直接替换 LLM 所有回复文本）
@@ -113,8 +116,9 @@ pub enum ChatMessageSteamEvent {
     },
     /// workflow 开始执行
     WorkflowStarted {
+        /// 消息基础信息
         #[serde(flatten)]
-        base: EventBase,
+        base: MessageBase,
         /// 任务 ID，用于请求跟踪和下方的停止响应接口
         task_id: String,
         /// workflow 执行 ID
@@ -127,8 +131,9 @@ pub enum ChatMessageSteamEvent {
 
     /// node 执行开始
     NodeStarted {
+        /// 消息基础信息
         #[serde(flatten)]
-        base: EventBase,
+        base: MessageBase,
         /// 任务 ID，用于请求跟踪和下方的停止响应接口
         task_id: String,
         /// workflow 执行 ID
@@ -140,8 +145,9 @@ pub enum ChatMessageSteamEvent {
     },
     /// node 执行结束, 成功失败同一事件中不同状态
     NodeFinished {
+        /// 消息基础信息
         #[serde(flatten)]
-        base: EventBase,
+        base: MessageBase,
         /// 任务 ID，用于请求跟踪和下方的停止响应接口
         task_id: String,
         /// workflow 执行 ID
@@ -153,8 +159,9 @@ pub enum ChatMessageSteamEvent {
     },
     /// workflow 执行结束，成功失败同一事件中不同状态
     WorkflowFinished {
+        /// 消息基础信息
         #[serde(flatten)]
-        base: EventBase,
+        base: MessageBase,
         /// 任务 ID，用于请求跟踪和下方的停止响应接口
         task_id: String,
         /// workflow 执行 ID
@@ -166,8 +173,9 @@ pub enum ChatMessageSteamEvent {
     },
     /// 流式输出过程中出现的异常会以 stream event 形式输出，收到异常事件后即结束。
     Error {
+        /// 消息基础信息
         #[serde(flatten)]
-        base: EventBase,
+        base: MessageBase,
         /// HTTP 状态码
         status: u32,
         /// 错误码

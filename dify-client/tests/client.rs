@@ -129,8 +129,8 @@ fn assert_chat_message_result(result: Result<response::ChatMessageResponse>) {
         let response = result.unwrap();
         println!("{:}", serde_json::to_string_pretty(&response).unwrap());
         assert_eq!(response.event, "message");
-        assert!(!response.message_id.is_empty());
-        assert!(!response.conversation_id.is_empty());
+        assert!(!response.base.message_id.is_empty());
+        assert!(!response.base.conversation_id.is_empty());
         assert_eq!(response.mode, response::AppMode::AdvancedChat);
     }
 }
