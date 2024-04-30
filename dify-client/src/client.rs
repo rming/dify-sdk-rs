@@ -404,22 +404,25 @@ impl Client {
         }
     }
 
-    /// Sends a request to stop stream chat messages to the Dify API and returns the response.
+    /// Sends a request to stop stream task from the Dify API and returns the response.
+    /// 仅支持流式模式。
     ///
     /// # Arguments
-    /// * `req_data` - The chat message stop request data.
+    /// * `req_data` - The stream task stop request data.
+    /// * `api_path` - The API path.
     ///
     /// # Returns
-    /// A `Result` containing the chat message stop response or an error.
-    pub async fn chat_messages_stop(
+    /// A `Result` containing the stream task stop response or an error.
+    async fn stream_task_stop(
         &self,
-        mut req_data: ChatMessageStopRequest,
+        mut req_data: StreamTaskStopRequest,
+        api_path: ApiPath,
     ) -> Result<ResultResponse> {
         if req_data.task_id.is_empty() {
-            bail!("ChatMessageStopRequest.TaskId Illegal");
+            bail!("StreamTaskStopRequest.TaskId Illegal");
         }
 
-        let url = self.build_request_api(ApiPath::ChatMessagesStop);
+        let url = self.build_request_api(api_path);
         let url = url.replace("{task_id}", &req_data.task_id);
 
         req_data.task_id = String::new();
@@ -434,6 +437,21 @@ impl Client {
         } else {
             bail!(text)
         }
+    }
+
+    /// Sends a request to stop stream chat messages to the Dify API and returns the response.
+    ///
+    /// # Arguments
+    /// * `req_data` - The chat message stop request data.
+    ///
+    /// # Returns
+    /// A `Result` containing the chat message stop response or an error.
+    pub async fn chat_messages_stop(
+        &self,
+        req_data: StreamTaskStopRequest,
+    ) -> Result<ResultResponse> {
+        self.stream_task_stop(req_data, ApiPath::ChatMessagesStop)
+            .await
     }
 
     /// Sends a request to retrieve suggested messages from the Dify API and returns the response.
@@ -453,7 +471,6 @@ impl Client {
 
         let url = self.build_request_api(ApiPath::MessagesSuggested);
         let url = url.replace("{message_id}", &req_data.message_id);
-        println!("url: {}", url);
 
         req_data.message_id = String::new();
         let req = self.create_request(url, Method::GET, req_data)?;
@@ -829,5 +846,17 @@ impl Client {
             }
         }
         Ok(ret)
+    }
+
+    /// Sends a request to stop stream workflows from the Dify API and returns the response.
+    ///
+    /// # Arguments
+    /// * `req_data` - The stream task stop request data.
+    ///
+    /// # Returns
+    /// A `Result` containing the stream task stop response or an error.
+    pub async fn workflows_stop(&self, req_data: StreamTaskStopRequest) -> Result<ResultResponse> {
+        self.stream_task_stop(req_data, ApiPath::WorkflowsStop)
+            .await
     }
 }

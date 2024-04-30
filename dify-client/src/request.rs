@@ -74,7 +74,7 @@ pub enum ChatMessageFile {
 
 /// 停止响应请求
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ChatMessageStopRequest {
+pub struct StreamTaskStopRequest {
     /// 任务 ID，可在流式返回 Chunk 中获取
     pub task_id: String,
     /// 用户标识，用于定义终端用户的身份，必须和发送消息接口传入 user 保持一致。

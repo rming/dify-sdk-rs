@@ -215,7 +215,7 @@ async fn test_parameters() {
 #[tokio::test]
 async fn test_chat_messages_stop() {
     let client = get_client_default();
-    let msg = request::ChatMessageStopRequest {
+    let msg = request::StreamTaskStopRequest {
         task_id: "task_id".into(),
         user: "afa".into(),
     };
@@ -361,4 +361,18 @@ Chatflow is set to overtake "expert mode" in current Chatbot apps. You may choos
     let answers = result.unwrap();
     let answer = answers.concat();
     println!("{:?}", answer);
+}
+
+#[tokio::test]
+async fn test_workflows_stop() {
+    let client = get_client(Some("app-hxBGNNbzVsl46o20NPvSYOxB"));
+    let msg = request::StreamTaskStopRequest {
+        task_id: "4ad31d44-7845-4dc3-893d-42211e800378".into(),
+        user: "afa".into(),
+    };
+    let result = client.workflows_stop(msg).await;
+    println!("{:?}", result);
+    assert!(result.is_ok());
+    let response = result.unwrap();
+    println!("{:}", serde_json::to_string_pretty(&response).unwrap());
 }
