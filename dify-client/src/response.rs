@@ -25,7 +25,7 @@ pub struct ResultResponse {
     pub result: String,
 }
 
-/// 消息基础信息
+/// 对话基础信息
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ChatMessageBase {
     /// 消息唯一 ID
@@ -52,6 +52,7 @@ pub struct ChatMessageResponse {
     pub metadata: HashMap<String, JsonValue>,
 }
 
+/// 流式模式分块数据事件
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "event", rename_all = "snake_case")]
 pub enum SteamMessageEvent {
