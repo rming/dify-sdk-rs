@@ -202,3 +202,22 @@ pub struct FilesUploadRequest {
     /// 用户标识，用于定义终端用户的身份，必须和发送消息接口传入 user 保持一致。
     pub user: String,
 }
+
+/// 执行 workflow 请求
+#[derive(Debug, Default, Serialize, Deserialize)]
+pub struct WorkflowsRunRequest {
+    /// 允许传入 App 定义的各变量值。  
+    /// inputs 参数包含了多组键值对（Key/Value pairs），每组的键对应一个特定变量，每组的值则是该变量的具体值。  
+    /// 默认 {}  
+    pub inputs: HashMap<String, String>,
+    /// 响应模式  
+    /// * streaming 流式模式（推荐）。基于 SSE（Server-Sent Events）实现类似打字机输出方式的流式返回。
+    /// * blocking 阻塞模式，等待执行完毕后返回结果。（请求若流程较长可能会被中断）。  
+    /// 由于 Cloudflare 限制，请求会在 100 秒超时无返回后中断。
+    pub response_mode: ResponseMode,
+    /// 用户标识，用于定义终端用户的身份，方便检索、统计。  
+    /// 由开发者定义规则，需保证用户标识在应用内唯一。  
+    pub user: String,
+    /// 文件列表，适用于传入文件（图片）结合文本理解并回答问题，仅当模型支持 Vision 能力时可用。
+    pub files: Vec<ChatMessageFile>,
+}

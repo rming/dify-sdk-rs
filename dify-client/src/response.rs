@@ -564,3 +564,14 @@ pub struct FilesUploadResponse {
     /// 上传时间
     created_at: u64,
 }
+
+/// 执行 workflow 响应
+#[derive(Debug, Deserialize, Serialize)]
+pub struct WorkflowsRunResponse {
+    /// workflow 执行 ID
+    pub workflow_run_id: String,
+    /// 任务 ID，用于请求跟踪和下方的停止响应接口
+    pub task_id: String,
+    /// 详细内容
+    pub data: WorkflowFinishedData,
+}

@@ -43,6 +43,12 @@ pub enum ApiPath {
     Parameters,
     /// 获取应用Meta信息, 用于获取工具icon
     Meta,
+
+    /// workflow
+    /// 执行 workflow
+    WorkflowsRun,
+    /// 停止响应, 仅支持流式模式。
+    WorkflowsStop,
 }
 
 /// API 路径
@@ -69,6 +75,8 @@ impl ApiPath {
             ApiPath::TextToAudio => "/v1/text-to-audio",
             ApiPath::Parameters => "/v1/parameters",
             ApiPath::Meta => "/v1/meta",
+            ApiPath::WorkflowsRun => "/v1/workflows/run",
+            ApiPath::WorkflowsStop => "/v1/workflows/{task_id}/stop",
         }
     }
 }
@@ -772,6 +780,44 @@ impl Client {
         let text = resp.text().await?;
         // parse message type
         if let Ok(data) = serde_json::from_str::<MetaResponse>(&text) {
+            Ok(data)
+        } else if let Ok(err) = serde_json::from_str::<ErrorResponse>(&text) {
+            bail!(err)
+        } else {
+            bail!(text)
+        }
+    }
+
+    /// Creates a request to run workflows from the Dify API.
+    ///
+    /// # Arguments
+    /// * `req` - The workflows run request data.
+    ///     
+    /// # Returns
+    /// A `Result` containing the request or an error.
+    fn create_workflows_run_request(&self, req: WorkflowsRunRequest) -> Result<Request> {
+        let url = self.build_request_api(ApiPath::WorkflowsRun);
+        self.create_request(url, Method::POST, req)
+    }
+
+    /// Sends a request to run workflows from the Dify API and returns the response.
+    ///
+    /// # Arguments
+    /// * `req_data` - The workflows run request data.
+    ///
+    /// # Returns
+    /// A `Result` containing the workflows run response or an error.
+    pub async fn workflows_run(
+        &self,
+        mut req_data: WorkflowsRunRequest,
+    ) -> Result<WorkflowsRunResponse> {
+        req_data.response_mode = ResponseMode::Blocking;
+
+        let req = self.create_workflows_run_request(req_data)?;
+        let resp = self.http_client.execute(req).await?;
+        let text = resp.text().await?;
+        // parse message type
+        if let Ok(data) = serde_json::from_str::<WorkflowsRunResponse>(&text) {
             Ok(data)
         } else if let Ok(err) = serde_json::from_str::<ErrorResponse>(&text) {
             bail!(err)
