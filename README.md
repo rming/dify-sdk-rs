@@ -8,7 +8,7 @@ To add `dify-client` to your package, add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-dify-client = "0.1"
+dify-client = "0.2"
 ```
 
 ## Test
