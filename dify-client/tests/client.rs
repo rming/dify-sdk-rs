@@ -53,13 +53,13 @@ fn get_client_default() -> Client {
 #[tokio::test]
 async fn test_chat_message_complex() {
     let client = get_client_default();
-    let msg = request::ChatMessageRequest {
+    let msg = request::ChatMessagesRequest {
         inputs: HashMap::from([("name".into(), "iPhone 13 Pro Max".into())]),
         query: "What are the specs of the iPhone 13 Pro Max?".into(),
         response_mode: request::ResponseMode::Blocking,
         conversation_id: "".into(),
         user: "afa".into(),
-        files: vec![request::ChatMessageFile::RemoteUrl {
+        files: vec![request::FileInput::RemoteUrl {
             url: "https://www.baidu.com/img/PCfb_5bf082d29588c07f842ccde3f97243ea.png".into(),
             type_: request::FileType::Image,
         }],
@@ -72,7 +72,7 @@ async fn test_chat_message_complex() {
 #[tokio::test]
 async fn test_chat_message_simple() {
     let client = get_client_default();
-    let msg = request::ChatMessageRequest {
+    let msg = request::ChatMessagesRequest {
         query: "how are you?".into(),
         user: "afa".into(),
         ..Default::default()
@@ -84,7 +84,7 @@ async fn test_chat_message_simple() {
 #[tokio::test]
 async fn test_chat_message_stream() {
     let client = get_client_default();
-    let msg = request::ChatMessageRequest {
+    let msg = request::ChatMessagesRequest {
         query: "write a story in 100 words about life".into(),
         user: "afa".into(),
         ..Default::default()
@@ -108,7 +108,7 @@ async fn test_chat_message_stream() {
     println!("{:?}", answer);
 }
 
-fn assert_chat_message_result(result: Result<response::ChatMessageResponse>) {
+fn assert_chat_message_result(result: Result<response::ChatMessagesResponse>) {
     if let Err(e) = result {
         match e.downcast::<response::ErrorResponse>() {
             Ok(err_resp) => {
@@ -124,7 +124,7 @@ fn assert_chat_message_result(result: Result<response::ChatMessageResponse>) {
         assert_eq!(response.event, "message");
         assert_eq!(response.mode, response::AppMode::AdvancedChat);
         assert!(!response.base.message_id.is_empty());
-        assert!(!response.base.conversation_id.is_empty());
+        assert!(response.base.conversation_id.is_some());
     }
 }
 
@@ -227,11 +227,19 @@ async fn test_chat_messages_stop() {
 
 #[tokio::test]
 async fn test_messages_suggested() {
-    let client = get_client_default();
-    let msg = request::MessagesSuggestedRequest {
-        message_id: "6f52aa16-e102-405c-a6a8-058e8c900058".into(),
+    let client = get_client(Some("app-Dj4rqEJ0QZh2beEAjIfsJGbm"));
+    // send a message to get message_id
+    let msg = request::ChatMessagesRequest {
+        query: "how are you?".into(),
+        user: "afa".into(),
+        ..Default::default()
     };
+    let result = client.chat_messages(msg).await;
+    let message_id = result.unwrap().base.message_id;
+    // get suggested messages
+    let msg = request::MessagesSuggestedRequest { message_id };
     let result = client.messages_suggested(msg).await;
+    println!("{:?}", result);
     assert!(result.is_ok());
     let response = result.unwrap();
     println!("{:}", serde_json::to_string_pretty(&response).unwrap());
@@ -270,6 +278,7 @@ async fn test_text_to_audio() {
         ..Default::default()
     };
     let result = client.text_to_audio(msg).await;
+    println!("{:?}", result);
     assert!(result.is_ok());
     let bytes = result.unwrap();
     // write bytes to /tmp/test.mp3

@@ -5,7 +5,7 @@ use std::collections::HashMap;
 /// 发送对话消息的请求
 /// 创建会话消息。
 #[derive(Debug, Default, Serialize, Deserialize)]
-pub struct ChatMessageRequest {
+pub struct ChatMessagesRequest {
     /// 允许传入 App 定义的各变量值。  
     /// inputs 参数包含了多组键值对（Key/Value pairs），每组的键对应一个特定变量，每组的值则是该变量的具体值。  
     /// 默认 {}  
@@ -23,7 +23,7 @@ pub struct ChatMessageRequest {
     /// 会话 ID（选填），需要基于之前的聊天记录继续对话，必须传之前消息的 conversation_id。
     pub conversation_id: String,
     /// 上传的文件。
-    pub files: Vec<ChatMessageFile>,
+    pub files: Vec<FileInput>,
     /// 自动生成标题（选填），默认 true。  
     /// 若设置为 false，则可通过调用会话重命名接口并设置 auto_generate 为 true 实现异步生成标题。
     pub auto_generate_name: bool,
@@ -53,7 +53,7 @@ pub enum FileType {
 /// 上传的文件
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case", tag = "transfer_method")]
-pub enum ChatMessageFile {
+pub enum FileInput {
     /// 图片地址方式传递
     RemoteUrl {
         /// 文件类型
@@ -219,7 +219,7 @@ pub struct WorkflowsRunRequest {
     /// 由开发者定义规则，需保证用户标识在应用内唯一。  
     pub user: String,
     /// 文件列表，适用于传入文件（图片）结合文本理解并回答问题，仅当模型支持 Vision 能力时可用。
-    pub files: Vec<ChatMessageFile>,
+    pub files: Vec<FileInput>,
 }
 
 /// 文本生成请求
@@ -240,5 +240,5 @@ pub struct CompletionMessagesRequest {
     /// 会话 ID（选填），需要基于之前的聊天记录继续对话，必须传之前消息的 conversation_id。
     pub conversation_id: String,
     /// 文件列表，适用于传入文件（图片）结合文本理解并回答问题，仅当模型支持 Vision 能力时可用。
-    pub files: Vec<ChatMessageFile>,
+    pub files: Vec<FileInput>,
 }

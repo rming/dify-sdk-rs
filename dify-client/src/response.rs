@@ -27,21 +27,21 @@ pub struct ResultResponse {
 
 /// 对话基础信息
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ChatMessageBase {
+pub struct MessageBase {
     /// 消息唯一 ID
     pub message_id: String,
     /// 会话 ID
-    pub conversation_id: String,
+    pub conversation_id: Option<String>,
     /// 创建时间戳，如：1705395332
     pub created_at: u64,
 }
 
 /// 发送对话消息的响应
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ChatMessageResponse {
+pub struct ChatMessagesResponse {
     /// 消息基础信息
     #[serde(flatten)]
-    pub base: ChatMessageBase,
+    pub base: MessageBase,
     /// 事件
     pub event: String,
     /// App 模式
@@ -60,7 +60,7 @@ pub enum SteamMessageEvent {
     Message {
         /// 消息基础信息
         #[serde(flatten)]
-        base: Option<ChatMessageBase>,
+        base: Option<MessageBase>,
         /// 消息 ID
         id: String,
         /// 任务 ID，用于请求跟踪和下方的停止响应接口
@@ -74,7 +74,7 @@ pub enum SteamMessageEvent {
     MessageFile {
         /// 消息基础信息
         #[serde(flatten)]
-        base: Option<ChatMessageBase>,
+        base: Option<MessageBase>,
         /// 文件唯一 ID
         id: String,
         /// 文件类型，目前仅为 image
@@ -92,7 +92,7 @@ pub enum SteamMessageEvent {
     MessageEnd {
         /// 消息基础信息
         #[serde(flatten)]
-        base: Option<ChatMessageBase>,
+        base: Option<MessageBase>,
         /// 消息 ID
         id: String,
         /// 任务 ID，用于请求跟踪和下方的停止响应接口
@@ -107,7 +107,7 @@ pub enum SteamMessageEvent {
     MessageReplace {
         /// 消息基础信息
         #[serde(flatten)]
-        base: Option<ChatMessageBase>,
+        base: Option<MessageBase>,
         /// 任务 ID，用于请求跟踪和下方的停止响应接口
         task_id: String,
         /// 替换内容（直接替换 LLM 所有回复文本）
@@ -119,13 +119,13 @@ pub enum SteamMessageEvent {
     WorkflowStarted {
         /// 消息基础信息
         #[serde(flatten)]
-        base: Option<ChatMessageBase>,
+        base: Option<MessageBase>,
         /// 任务 ID，用于请求跟踪和下方的停止响应接口
         task_id: String,
         /// workflow 执行 ID
         workflow_run_id: String,
         /// workflow 详细内容
-        data: WorkflowData,
+        data: WorkflowStartedData,
         #[serde(flatten)]
         extra: HashMap<String, JsonValue>,
     },
@@ -134,13 +134,13 @@ pub enum SteamMessageEvent {
     NodeStarted {
         /// 消息基础信息
         #[serde(flatten)]
-        base: Option<ChatMessageBase>,
+        base: Option<MessageBase>,
         /// 任务 ID，用于请求跟踪和下方的停止响应接口
         task_id: String,
         /// workflow 执行 ID
         workflow_run_id: String,
         /// node 详细内容
-        data: NodeData,
+        data: NodeStartedData,
         #[serde(flatten)]
         extra: HashMap<String, JsonValue>,
     },
@@ -148,7 +148,7 @@ pub enum SteamMessageEvent {
     NodeFinished {
         /// 消息基础信息
         #[serde(flatten)]
-        base: Option<ChatMessageBase>,
+        base: Option<MessageBase>,
         /// 任务 ID，用于请求跟踪和下方的停止响应接口
         task_id: String,
         /// workflow 执行 ID
@@ -162,7 +162,7 @@ pub enum SteamMessageEvent {
     WorkflowFinished {
         /// 消息基础信息
         #[serde(flatten)]
-        base: Option<ChatMessageBase>,
+        base: Option<MessageBase>,
         /// 任务 ID，用于请求跟踪和下方的停止响应接口
         task_id: String,
         /// workflow 执行 ID
@@ -176,7 +176,7 @@ pub enum SteamMessageEvent {
     Error {
         /// 消息基础信息
         #[serde(flatten)]
-        base: Option<ChatMessageBase>,
+        base: Option<MessageBase>,
         /// HTTP 状态码
         status: u32,
         /// 错误码
@@ -192,7 +192,7 @@ pub enum SteamMessageEvent {
 
 /// workflow 详细内容
 #[derive(Debug, Serialize, Deserialize)]
-pub struct WorkflowData {
+pub struct WorkflowStartedData {
     /// workflow 执行 ID
     pub id: String,
     /// 关联 Workflow ID
@@ -234,7 +234,7 @@ pub struct WorkflowFinishedData {
 
 /// node 详细内容
 #[derive(Debug, Serialize, Deserialize)]
-pub struct NodeData {
+pub struct NodeStartedData {
     /// workflow 执行 ID
     pub id: String,
     /// 节点 ID
@@ -333,12 +333,12 @@ pub struct MessagesResponse {
     /// 是否存在下一页
     pub has_more: bool,
     /// 消息列表
-    pub data: Vec<MessagesData>,
+    pub data: Vec<MessageData>,
 }
 
 /// 历史消息数据
 #[derive(Debug, Deserialize, Serialize)]
-pub struct MessagesData {
+pub struct MessageData {
     /// 消息 ID
     pub id: String,
     /// 会话 ID
@@ -350,9 +350,9 @@ pub struct MessagesData {
     /// 回答消息内容
     pub answer: String,
     /// 消息文件
-    pub message_files: Vec<MessagesHistoryFile>,
+    pub message_files: Vec<MessageFile>,
     /// 反馈信息
-    pub feedback: Option<MessagesHistoryFeedbacks>,
+    pub feedback: Option<MessageFeedback>,
     /// 引用和归属分段列表
     pub retriever_resources: Vec<JsonValue>,
     /// 创建时间
@@ -361,16 +361,16 @@ pub struct MessagesData {
 
 /// 历史消息数据中的文件信息
 #[derive(Debug, Serialize, Deserialize)]
-pub struct MessagesHistoryFile {
+pub struct MessageFile {
     /// ID
-    id: String,
+    pub id: String,
     /// 文件类型，image 图片
     #[serde(rename = "type")]
-    type_: FileType,
+    pub type_: FileType,
     /// 预览图片地址
-    url: String,
+    pub url: String,
     /// 文件归属方，user 或 assistant
-    belongs_to: BelongsTo,
+    pub belongs_to: BelongsTo,
 }
 
 /// 文件归属方
@@ -383,7 +383,7 @@ pub enum BelongsTo {
 
 /// 历史消息数据中的反馈信息
 #[derive(Debug, Deserialize, Serialize)]
-pub struct MessagesHistoryFeedbacks {
+pub struct MessageFeedback {
     /// 点赞 like / 点踩 dislike
     pub rating: Feedback,
 }
@@ -396,12 +396,12 @@ pub struct ConversationsResponse {
     /// 返回条数，若传入超过系统限制，返回系统限制数量
     pub limit: u32,
     /// 会话列表
-    pub data: Vec<ConversationsData>,
+    pub data: Vec<ConversationData>,
 }
 
 /// 会话数据
 #[derive(Debug, Deserialize, Serialize)]
-pub struct ConversationsData {
+pub struct ConversationData {
     /// 会话 ID
     pub id: String,
     /// 会话名称，默认为会话中用户最开始问题的截取。
@@ -423,45 +423,45 @@ pub struct ParametersResponse {
     /// 开场推荐问题列表
     pub suggested_questions: Vec<String>,
     /// 启用回答后给出推荐问题。
-    pub suggested_questions_after_answer: ParametersSuggestedQuestionsAfterAnswer,
+    pub suggested_questions_after_answer: ParameterSuggestedQuestionsAfterAnswer,
     /// 语音转文本
-    pub speech_to_text: ParametersSpeechToText,
+    pub speech_to_text: ParameterSpeechToText,
     /// 引用和归属
-    pub retriever_resource: ParametersRetrieverResource,
+    pub retriever_resource: ParameterRetrieverResource,
     /// 标记回复
-    pub annotation_reply: ParametersAnnotationReply,
+    pub annotation_reply: ParameterAnnotationReply,
     /// 用户输入表单配置
-    pub user_input_form: Vec<ParametersUserInputFormItem>,
+    pub user_input_form: Vec<ParameterUserInputFormItem>,
     /// 文件上传配置
     #[serde_as(as = "EnumMap")]
-    pub file_upload: Vec<ParametersFileUploadItem>,
-    pub system_parameters: ParametersSystemParameters,
+    pub file_upload: Vec<ParameterFileUploadItem>,
+    pub system_parameters: SystemParameters,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
 /// 启用回答后给出推荐问题。
-pub struct ParametersSuggestedQuestionsAfterAnswer {
+pub struct ParameterSuggestedQuestionsAfterAnswer {
     /// 是否开启
     pub enabled: bool,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
 /// 语音转文本
-pub struct ParametersSpeechToText {
+pub struct ParameterSpeechToText {
     /// 是否开启
     pub enabled: bool,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
 /// 引用和归属
-pub struct ParametersRetrieverResource {
+pub struct ParameterRetrieverResource {
     /// 是否开启
     pub enabled: bool,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
 /// 标记回复
-pub struct ParametersAnnotationReply {
+pub struct ParameterAnnotationReply {
     /// 是否开启
     pub enabled: bool,
 }
@@ -469,7 +469,7 @@ pub struct ParametersAnnotationReply {
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "snake_case")]
 /// 用户输入表单配置
-pub enum ParametersUserInputFormItem {
+pub enum ParameterUserInputFormItem {
     /// 文本输入控件
     #[serde(rename = "text-input")]
     TextInput {
@@ -513,7 +513,7 @@ pub enum ParametersUserInputFormItem {
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "snake_case")]
 /// 文件上传配置
-pub enum ParametersFileUploadItem {
+pub enum ParameterFileUploadItem {
     /// 当前仅支持图片类型
     Image {
         /// 是否开启
@@ -535,7 +535,7 @@ pub enum TransferMethod {
 
 /// 系统参数
 #[derive(Debug, Deserialize, Serialize)]
-pub struct ParametersSystemParameters {
+pub struct SystemParameters {
     /// 图片文件上传大小限制（MB）
     pub image_file_size_limit: String,
 }
@@ -565,19 +565,19 @@ pub struct AudioToTextResponse {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct FilesUploadResponse {
     /// ID
-    id: String,
+    pub id: String,
     /// 文件名
-    name: String,
+    pub name: String,
     /// 文件大小（byte）
-    size: u64,
+    pub size: u64,
     /// 文件后缀
-    extension: String,
+    pub extension: String,
     /// 文件 mime-type
-    mime_type: String,
+    pub mime_type: String,
     /// 上传人 ID
-    created_by: String,
+    pub created_by: String,
     /// 上传时间
-    created_at: u64,
+    pub created_at: u64,
 }
 
 /// 执行 workflow 响应
@@ -594,12 +594,11 @@ pub struct WorkflowsRunResponse {
 /// 文本生成的响应
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CompletionMessagesResponse {
-    /// 消息唯一 ID
-    pub message_id: String,
+    /// 消息基础信息
+    #[serde(flatten)]
+    pub base: MessageBase,
     /// 任务 ID，用于请求跟踪和下方的停止响应接口
     pub task_id: String,
-    /// 创建时间戳，如：1705395332
-    pub created_at: u64,
     /// 事件
     pub event: String,
     /// App 模式

@@ -298,7 +298,7 @@ impl Client {
     ///
     /// # Errors
     /// Returns an error if the request cannot be created.
-    fn create_chat_message_request(&self, req: ChatMessageRequest) -> Result<Request> {
+    fn create_chat_messages_request(&self, req: ChatMessagesRequest) -> Result<Request> {
         let url = self.build_request_api(ApiPath::ChatMessages);
         self.create_request(url, Method::POST, req)
     }
@@ -312,15 +312,15 @@ impl Client {
     /// A `Result` containing the chat message response or an error.
     pub async fn chat_messages(
         &self,
-        mut req_data: ChatMessageRequest,
-    ) -> Result<ChatMessageResponse> {
+        mut req_data: ChatMessagesRequest,
+    ) -> Result<ChatMessagesResponse> {
         req_data.response_mode = ResponseMode::Blocking;
 
-        let req = self.create_chat_message_request(req_data)?;
+        let req = self.create_chat_messages_request(req_data)?;
         let resp = self.http_client.execute(req).await?;
         let text = resp.text().await?;
         // parse message type
-        if let Ok(data) = serde_json::from_str::<ChatMessageResponse>(&text) {
+        if let Ok(data) = serde_json::from_str::<ChatMessagesResponse>(&text) {
             Ok(data)
         } else if let Ok(err) = serde_json::from_str::<ErrorResponse>(&text) {
             bail!(err)
@@ -347,7 +347,7 @@ impl Client {
     /// Returns an error if the request cannot be created or the stream fails.
     pub async fn chat_messages_stream<F, T>(
         &self,
-        mut req_data: ChatMessageRequest,
+        mut req_data: ChatMessagesRequest,
         callback: F,
     ) -> Result<Vec<T>>
     where
@@ -355,7 +355,7 @@ impl Client {
     {
         req_data.response_mode = ResponseMode::Streaming;
 
-        let req = self.create_chat_message_request(req_data)?;
+        let req = self.create_chat_messages_request(req_data)?;
         let resp = self.http_client.execute(req).await?;
         let mut stream = resp.bytes_stream().eventsource();
 
