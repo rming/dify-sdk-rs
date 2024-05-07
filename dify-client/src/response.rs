@@ -590,3 +590,22 @@ pub struct WorkflowsRunResponse {
     /// 详细内容
     pub data: WorkflowFinishedData,
 }
+
+/// 文本生成的响应
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CompletionMessagesResponse {
+    /// 消息唯一 ID
+    pub message_id: String,
+    /// 任务 ID，用于请求跟踪和下方的停止响应接口
+    pub task_id: String,
+    /// 创建时间戳，如：1705395332
+    pub created_at: u64,
+    /// 事件
+    pub event: String,
+    /// App 模式
+    pub mode: AppMode,
+    /// 完整回复内容
+    pub answer: String,
+    /// 元数据
+    pub metadata: HashMap<String, JsonValue>,
+}

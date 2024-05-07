@@ -49,6 +49,12 @@ pub enum ApiPath {
     WorkflowsRun,
     /// 停止响应, 仅支持流式模式。
     WorkflowsStop,
+
+    /// completion 文本生成
+    /// 发送请求给文本生成型应用
+    CompletionMessages,
+    /// 文本生成停止响应
+    CompletionMessagesStop,
 }
 
 /// API 路径
@@ -77,6 +83,8 @@ impl ApiPath {
             ApiPath::Meta => "/v1/meta",
             ApiPath::WorkflowsRun => "/v1/workflows/run",
             ApiPath::WorkflowsStop => "/v1/workflows/{task_id}/stop",
+            ApiPath::CompletionMessages => "/v1/completion-messages",
+            ApiPath::CompletionMessagesStop => "/v1/completion-messages/{task_id}/stop",
         }
     }
 }
@@ -857,6 +865,110 @@ impl Client {
     /// A `Result` containing the stream task stop response or an error.
     pub async fn workflows_stop(&self, req_data: StreamTaskStopRequest) -> Result<ResultResponse> {
         self.stream_task_stop(req_data, ApiPath::WorkflowsStop)
+            .await
+    }
+
+    /// Creates a request to create completion messages from the Dify API.
+    ///
+    /// # Arguments
+    /// * `req` - The completion messages request data.
+    ///
+    /// # Returns
+    /// A `Result` containing the request or an error.
+    fn create_completion_messages_request(
+        &self,
+        req: CompletionMessagesRequest,
+    ) -> Result<Request> {
+        let url = self.build_request_api(ApiPath::CompletionMessages);
+        self.create_request(url, Method::POST, req)
+    }
+
+    /// Sends a request to create completion messages from the Dify API and returns the response.
+    /// 发送请求给文本生成型应用
+    ///
+    /// # Arguments
+    /// * `req_data` - The completion messages request data.
+    ///
+    /// # Returns
+    /// A `Result` containing the completion messages response or an error.
+    pub async fn completion_messages(
+        &self,
+        mut req_data: CompletionMessagesRequest,
+    ) -> Result<CompletionMessagesResponse> {
+        req_data.response_mode = ResponseMode::Blocking;
+
+        let req = self.create_completion_messages_request(req_data)?;
+        let resp = self.http_client.execute(req).await?;
+        let text = resp.text().await?;
+        // parse message type
+        if let Ok(data) = serde_json::from_str::<CompletionMessagesResponse>(&text) {
+            Ok(data)
+        } else if let Ok(err) = serde_json::from_str::<ErrorResponse>(&text) {
+            bail!(err)
+        } else {
+            bail!(text)
+        }
+    }
+
+    /// Sends a request to create completion messages from the Dify API and returns the response as a stream.
+    /// The callback function is called for each event in the stream.
+    /// The callback function should return `Some(T)` if the event is processed successfully, otherwise `None`.
+    /// The function returns a vector of the processed events.
+    /// The stream is stopped when the callback function returns an error or the stream ends.
+    ///
+    /// # Arguments
+    /// * `req_data` - The completion messages request data.
+    /// * `callback` - The callback function to process the stream events.
+    ///
+    /// # Returns
+    /// A `Result` containing the processed events or an error.
+    ///
+    /// # Errors
+    /// Returns an error if the request cannot be created or the stream fails.
+    pub async fn completion_messages_stream<F, T>(
+        &self,
+        mut req_data: CompletionMessagesRequest,
+        callback: F,
+    ) -> Result<Vec<T>>
+    where
+        F: Fn(SteamMessageEvent) -> Result<Option<T>> + Send + Sync,
+    {
+        req_data.response_mode = ResponseMode::Streaming;
+
+        let req = self.create_completion_messages_request(req_data)?;
+        let resp = self.http_client.execute(req).await?;
+        let mut stream = resp.bytes_stream().eventsource();
+
+        let mut ret: Vec<T> = Vec::new();
+        while let Some(event) = stream.next().await {
+            let event = event?;
+            if event.event == "message" {
+                match serde_json::from_str::<SteamMessageEvent>(&event.data) {
+                    Ok(msg_event) => {
+                        if let Some(answer) = callback(msg_event)? {
+                            ret.push(answer);
+                        }
+                    }
+                    Err(e) => bail!("data: {}, error: {}", event.data, e),
+                };
+            }
+        }
+        Ok(ret)
+    }
+
+    /// Sends a request to stop stream completion messages from the Dify API and returns the response.
+    /// 文本生成停止响应
+    ///
+    /// # Arguments
+    /// * `req_data` - The stream task stop request data.
+    ///
+    /// # Returns
+    /// A `Result` containing the stream task stop response or an error.
+    pub async fn completion_messages_stop(
+        &self,
+        req_data: StreamTaskStopRequest,
+    ) -> Result<ResultResponse> {
+        self.stream_task_stop(req_data, ApiPath::CompletionMessagesStop)
             .await
     }
 }

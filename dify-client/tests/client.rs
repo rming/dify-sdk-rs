@@ -358,9 +358,9 @@ Chatflow is set to overtake "expert mode" in current Chatbot apps. You may choos
         .await;
     println!("{:?}", result);
     assert!(result.is_ok());
-    let answers = result.unwrap();
-    let answer = answers.concat();
-    println!("{:?}", answer);
+    let outputs = result.unwrap();
+    let outputs = outputs.concat();
+    println!("{:?}", outputs);
 }
 
 #[tokio::test]
@@ -371,6 +371,76 @@ async fn test_workflows_stop() {
         user: "afa".into(),
     };
     let result = client.workflows_stop(msg).await;
+    println!("{:?}", result);
+    assert!(result.is_ok());
+    let response = result.unwrap();
+    println!("{:}", serde_json::to_string_pretty(&response).unwrap());
+}
+
+#[tokio::test]
+async fn test_completion_messages_simple() {
+    let client = get_client(Some("app-EkM8znfEpsn7tvPFZfhoKp7t"));
+    let msg = request::CompletionMessagesRequest {
+        inputs: HashMap::from([
+            ("Input_language".into(), "英文".into()),
+            ("Target_language".into(), "简体中文".into()),
+            (
+                "default_input".into(),
+                "The quick brown fox jumps over the lazy dog".into(),
+            ),
+        ]),
+        user: "afa".into(),
+        ..Default::default()
+    };
+    let result = client.completion_messages(msg).await;
+    println!("{:?}", result);
+    assert!(result.is_ok());
+    let response = result.unwrap();
+    println!("{:}", serde_json::to_string_pretty(&response).unwrap());
+}
+
+#[tokio::test]
+async fn test_completion_messages_stream() {
+    let client = get_client(Some("app-EkM8znfEpsn7tvPFZfhoKp7t"));
+    let msg = request::CompletionMessagesRequest {
+        inputs: HashMap::from([
+            ("Input_language".into(), "英文".into()),
+            ("Target_language".into(), "简体中文".into()),
+            (
+                "default_input".into(),
+                "The quick brown fox jumps over the lazy dog".into(),
+            ),
+        ]),
+        user: "afa".into(),
+        ..Default::default()
+    };
+
+    let result = client
+        .completion_messages_stream(msg, |e| {
+            println!("{:?}", e);
+            match e {
+                response::SteamMessageEvent::Message { answer, .. } => {
+                    return Ok(Some(answer));
+                }
+                _ => Ok(None),
+            }
+        })
+        .await;
+    println!("{:?}", result);
+    assert!(result.is_ok());
+    let answers = result.unwrap();
+    let answers = answers.concat();
+    println!("{:?}", answers);
+}
+
+#[tokio::test]
+async fn test_completion_messages_stop() {
+    let client = get_client(Some("app-EkM8znfEpsn7tvPFZfhoKp7t"));
+    let msg = request::StreamTaskStopRequest {
+        task_id: "task_id".into(),
+        user: "afa".into(),
+    };
+    let result = client.completion_messages_stop(msg).await;
     println!("{:?}", result);
     assert!(result.is_ok());
     let response = result.unwrap();
