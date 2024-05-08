@@ -19,6 +19,16 @@ impl Display for ErrorResponse {
     }
 }
 
+impl ErrorResponse {
+    pub fn unknown(message: String) -> Self {
+        ErrorResponse {
+            code: "unknown_error".into(),
+            message,
+            status: 503,
+        }
+    }
+}
+
 /// 通用结果响应
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ResultResponse {

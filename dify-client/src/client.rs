@@ -325,7 +325,7 @@ impl Client {
         } else if let Ok(err) = serde_json::from_str::<ErrorResponse>(&text) {
             bail!(err)
         } else {
-            bail!(text)
+            bail!(ErrorResponse::unknown(text))
         }
     }
 
@@ -408,7 +408,7 @@ impl Client {
         } else if let Ok(err) = serde_json::from_str::<ErrorResponse>(&text) {
             bail!(err)
         } else {
-            bail!(text)
+            bail!(ErrorResponse::unknown(text))
         }
     }
 
@@ -443,7 +443,7 @@ impl Client {
         } else if let Ok(err) = serde_json::from_str::<ErrorResponse>(&text) {
             bail!(err)
         } else {
-            bail!(text)
+            bail!(ErrorResponse::unknown(text))
         }
     }
 
@@ -490,7 +490,7 @@ impl Client {
         } else if let Ok(err) = serde_json::from_str::<ErrorResponse>(&text) {
             bail!(err)
         } else {
-            bail!(text)
+            bail!(ErrorResponse::unknown(text))
         }
     }
 
@@ -522,7 +522,7 @@ impl Client {
         } else if let Ok(err) = serde_json::from_str::<ErrorResponse>(&text) {
             bail!(err)
         } else {
-            bail!(text)
+            bail!(ErrorResponse::unknown(text))
         }
     }
 
@@ -552,7 +552,7 @@ impl Client {
         } else if let Ok(err) = serde_json::from_str::<ErrorResponse>(&text) {
             bail!(err)
         } else {
-            bail!(text)
+            bail!(ErrorResponse::unknown(text))
         }
     }
 
@@ -578,7 +578,7 @@ impl Client {
         } else if let Ok(err) = serde_json::from_str::<ErrorResponse>(&text) {
             bail!(err)
         } else {
-            bail!(text)
+            bail!(ErrorResponse::unknown(text))
         }
     }
 
@@ -613,7 +613,7 @@ impl Client {
         } else if let Ok(err) = serde_json::from_str::<ErrorResponse>(&text) {
             bail!(err)
         } else {
-            bail!(text)
+            bail!(ErrorResponse::unknown(text))
         }
     }
 
@@ -647,7 +647,7 @@ impl Client {
             if let Ok(err) = serde_json::from_str::<ErrorResponse>(&text) {
                 bail!(err)
             } else {
-                bail!(text)
+                bail!(ErrorResponse::unknown(text))
             }
         }
     }
@@ -683,7 +683,7 @@ impl Client {
         } else if let Ok(err) = serde_json::from_str::<ErrorResponse>(&text) {
             bail!(err)
         } else {
-            bail!(text)
+            bail!(ErrorResponse::unknown(text))
         }
     }
 
@@ -716,7 +716,7 @@ impl Client {
         } else if let Ok(err) = serde_json::from_str::<ErrorResponse>(&text) {
             bail!(err)
         } else {
-            bail!(text)
+            bail!(ErrorResponse::unknown(text))
         }
     }
 
@@ -742,7 +742,7 @@ impl Client {
         } else if let Ok(err) = serde_json::from_str::<ErrorResponse>(&text) {
             bail!(err)
         } else {
-            bail!(text)
+            bail!(ErrorResponse::unknown(text))
         }
     }
 
@@ -768,7 +768,7 @@ impl Client {
         } else if let Ok(err) = serde_json::from_str::<ErrorResponse>(&text) {
             bail!(err)
         } else {
-            bail!(text)
+            bail!(ErrorResponse::unknown(text))
         }
     }
 
@@ -806,7 +806,7 @@ impl Client {
         } else if let Ok(err) = serde_json::from_str::<ErrorResponse>(&text) {
             bail!(err)
         } else {
-            bail!(text)
+            bail!(ErrorResponse::unknown(text))
         }
     }
 
@@ -906,7 +906,7 @@ impl Client {
         } else if let Ok(err) = serde_json::from_str::<ErrorResponse>(&text) {
             bail!(err)
         } else {
-            bail!(text)
+            bail!(ErrorResponse::unknown(text))
         }
     }
 
