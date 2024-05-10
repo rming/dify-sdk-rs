@@ -1,10 +1,68 @@
+//! This module contains the request structures used in the Dify client SDK.
+//!
+//! The request structures define the data structures used to send various requests to the Dify API.
+//! These requests include sending chat messages, stopping stream tasks, getting suggested questions,
+//! providing message feedback, retrieving conversation history, managing conversations, uploading files,
+//! executing workflows, converting text to audio, converting audio to text, and generating completion messages.
+//!
+//! Each request structure is defined as a Rust struct and is annotated with `#[derive(Debug, Clone, Default, Serialize, Deserialize)]`
+//! to enable serialization and deserialization using the `serde` crate.
+//!
+//! The request structures include additional documentation comments to provide information about the purpose
+//! and usage of each field in the structure.
+//!
+//! Example:
+//!
+//! ```ignore
+//! // FILEPATH: ~/git/dify/dify-sdk-rs/dify-client/src/request.rs
+//! pub use bytes::Bytes;
+//! use serde::{Deserialize, Serialize};
+//! use std::collections::HashMap;
+//!
+//!
+//! /// 发送对话消息的请求
+//! /// 创建会话消息。
+//! #[derive(Debug, Clone, Default, Serialize, Deserialize)]
+//! pub struct ChatMessagesRequest {
+//!     /// 允许传入 App 定义的各变量值。
+//!     /// inputs 参数包含了多组键值对（Key/Value pairs），每组的键对应一个特定变量，每组的值则是该变量的具体值。
+//!     /// 默认 {}
+//!     pub inputs: HashMap<String, String>,
+//!     /// 用户输入/提问内容。
+//!     pub query: String,
+//!     /// 响应模式
+//!     /// * streaming 流式模式（推荐）。基于 SSE（Server-Sent Events）实现类似打字机输出方式的流式返回。
+//!     /// * blocking 阻塞模式，等待执行完毕后返回结果。（请求若流程较长可能会被中断）。
+//!     /// 由于 Cloudflare 限制，请求会在 100 秒超时无返回后中断。
+//!     pub response_mode: ResponseMode,
+//!     /// 用户标识，用于定义终端用户的身份，方便检索、统计。
+//!     /// 由开发者定义规则，需保证用户标识在应用内唯一。
+//!     pub user: String,
+//!     /// 会话 ID（选填），需要基于之前的聊天记录继续对话，必须传之前消息的 conversation_id。
+//!     pub conversation_id: String,
+//!     /// 上传的文件。
+//!     pub files: Vec<FileInput>,
+//!     /// 自动生成标题（选填），默认 true。
+//!     /// 若设置为 false，则可通过调用会话重命名接口并设置 auto_generate 为 true 实现异步生成标题。
+//!     pub auto_generate_name: bool,
+//! }
+//!
+//! // ... (other request structures)
+//!
+//! ```
+//!
+//! The request structures can be used to construct requests to the Dify API by populating the fields with the required data.
+//! These structures can then be serialized into JSON or other formats using the `serde` crate's serialization capabilities.
+//!
+//! For more information on each request structure and its fields, refer to the documentation comments provided for each structure.
+//!
 pub use bytes::Bytes;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 /// 发送对话消息的请求
 /// 创建会话消息。
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ChatMessagesRequest {
     /// 允许传入 App 定义的各变量值。  
     /// inputs 参数包含了多组键值对（Key/Value pairs），每组的键对应一个特定变量，每组的值则是该变量的具体值。  
@@ -33,7 +91,7 @@ pub struct ChatMessagesRequest {
 /// * streaming 流式模式（推荐）。基于 SSE（Server-Sent Events）实现类似打字机输出方式的流式返回。
 /// * blocking 阻塞模式，等待执行完毕后返回结果。（请求若流程较长可能会被中断）。  
 /// 由于 Cloudflare 限制，请求会在 100 秒超时无返回后中断。
-#[derive(Default, Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ResponseMode {
     /// 阻塞模式
@@ -44,14 +102,15 @@ pub enum ResponseMode {
 }
 
 /// 文件类型
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum FileType {
+    #[default]
     Image,
 }
 
 /// 上传的文件
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case", tag = "transfer_method")]
 pub enum FileInput {
     /// 图片地址方式传递
@@ -73,7 +132,7 @@ pub enum FileInput {
 }
 
 /// 停止响应请求
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct StreamTaskStopRequest {
     /// 任务 ID，可在流式返回 Chunk 中获取
     pub task_id: String,
@@ -82,7 +141,7 @@ pub struct StreamTaskStopRequest {
 }
 
 /// 获取下一轮建议问题列表请求
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct MessagesSuggestedRequest {
     /// Message ID
     pub message_id: String,
@@ -90,7 +149,7 @@ pub struct MessagesSuggestedRequest {
 
 /// 消息反馈请求
 /// 消息终端用户反馈、点赞，方便应用开发者优化输出预期。
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct MessagesFeedbacksRequest {
     /// 消息 ID
     pub message_id: String,
@@ -101,10 +160,11 @@ pub struct MessagesFeedbacksRequest {
 }
 
 /// 消息反馈
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Feedback {
     /// 点赞
+    #[default]
     Like,
     /// 点踩
     Dislike,
@@ -112,7 +172,7 @@ pub enum Feedback {
 
 /// 获取会话历史消息的请求
 /// 滚动加载形式返回历史聊天记录，第一页返回最新 limit 条，即：倒序返回。
-#[derive(Debug, Default, Deserialize, Serialize)]
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
 pub struct MessagesRequest {
     /// 会话 ID
     pub conversation_id: String,
@@ -125,7 +185,7 @@ pub struct MessagesRequest {
 }
 
 /// 获取会话列表的请求
-#[derive(Debug, Default, Deserialize, Serialize)]
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
 pub struct ConversationsRequest {
     /// 用户标识，由开发者定义规则，需保证用户标识在应用内唯一。
     pub user: String,
@@ -138,21 +198,21 @@ pub struct ConversationsRequest {
 }
 
 /// 获取应用配置信息的请求
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
 pub struct ParametersRequest {
     /// 用户标识，由开发者定义规则，需保证用户标识在应用内唯一。
     pub user: String,
 }
 
 /// 获取应用Meta信息的请求
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
 pub struct MetaRequest {
     /// 用户标识，由开发者定义规则，需保证用户标识在应用内唯一。
     pub user: String,
 }
 
 /// 会话重命名请求
-#[derive(Default, Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
 pub struct ConversationsRenameRequest {
     /// 会话 ID
     pub conversation_id: String,
@@ -165,7 +225,7 @@ pub struct ConversationsRenameRequest {
 }
 
 /// 删除会话请求
-#[derive(Default, Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
 pub struct ConversationsDeleteRequest {
     /// 会话 ID
     pub conversation_id: String,
@@ -174,7 +234,7 @@ pub struct ConversationsDeleteRequest {
 }
 
 /// 文字转语音请求
-#[derive(Default, Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
 pub struct TextToAudioRequest {
     /// 语音生成内容。
     pub text: String,
@@ -185,7 +245,7 @@ pub struct TextToAudioRequest {
 }
 
 /// 语音转文字请求
-#[derive(Default, Debug)]
+#[derive(Debug, Clone, Default)]
 pub struct AudioToTextRequest {
     /// 语音文件。   
     /// 支持格式：['mp3', 'mp4', 'mpeg', 'mpga', 'm4a', 'wav', 'webm'] 文件大小限制：15MB
@@ -195,7 +255,7 @@ pub struct AudioToTextRequest {
 }
 
 /// 上传文件请求  
-#[derive(Default, Debug)]
+#[derive(Debug, Clone, Default)]
 pub struct FilesUploadRequest {
     /// 要上传的文件。
     pub file: Bytes,
@@ -204,7 +264,7 @@ pub struct FilesUploadRequest {
 }
 
 /// 执行 workflow 请求
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct WorkflowsRunRequest {
     /// 允许传入 App 定义的各变量值。  
     /// inputs 参数包含了多组键值对（Key/Value pairs），每组的键对应一个特定变量，每组的值则是该变量的具体值。  
@@ -223,7 +283,7 @@ pub struct WorkflowsRunRequest {
 }
 
 /// 文本生成请求
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct CompletionMessagesRequest {
     /// 允许传入 App 定义的各变量值。  
     /// inputs 参数包含了多组键值对（Key/Value pairs），每组的键对应一个特定变量，每组的值则是该变量的具体值。  

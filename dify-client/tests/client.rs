@@ -1,5 +1,5 @@
 use anyhow::Result;
-use dify_client::{request, response, Client, Config};
+use dify_client::{http::header, request, response, Client, Config};
 use std::{collections::HashMap, env, time::Duration};
 
 #[test]
@@ -65,7 +65,7 @@ async fn test_chat_message_complex() {
         }],
         auto_generate_name: true,
     };
-    let result = client.chat_messages(msg).await;
+    let result = client.api().chat_messages(msg).await;
     assert_chat_message_result(result);
 }
 
@@ -77,7 +77,7 @@ async fn test_chat_message_simple() {
         user: "afa".into(),
         ..Default::default()
     };
-    let result = client.chat_messages(msg).await;
+    let result = client.api().chat_messages(msg).await;
     assert_chat_message_result(result);
 }
 
@@ -91,6 +91,7 @@ async fn test_chat_message_stream() {
     };
 
     let result = client
+        .api()
         .chat_messages_stream(msg, |e| {
             println!("{:?}", e);
             match e {
@@ -136,7 +137,7 @@ async fn test_feedback_message() {
         rating: Some(request::Feedback::Like),
         user: "afa".into(),
     };
-    let result = client.messages_feedbacks(msg).await;
+    let result = client.api().messages_feedbacks(msg).await;
     assert_feedback_result(result);
 
     let msg1 = request::MessagesFeedbacksRequest {
@@ -144,7 +145,7 @@ async fn test_feedback_message() {
         rating: None,
         user: "afa".into(),
     };
-    let result1 = client.messages_feedbacks(msg1).await;
+    let result1 = client.api().messages_feedbacks(msg1).await;
     assert_feedback_result(result1);
 
     let msg2 = request::MessagesFeedbacksRequest {
@@ -152,7 +153,7 @@ async fn test_feedback_message() {
         rating: Some(request::Feedback::Dislike),
         user: "afa".into(),
     };
-    let result2 = client.messages_feedbacks(msg2).await;
+    let result2 = client.api().messages_feedbacks(msg2).await;
     assert_feedback_result(result2);
 }
 
@@ -179,7 +180,7 @@ async fn test_conversations_get() {
         user: "afa".into(),
         ..Default::default()
     };
-    let result = client.conversations(msg).await;
+    let result = client.api().conversations(msg).await;
     assert!(result.is_ok());
     let response = result.unwrap();
     println!("{:}", serde_json::to_string_pretty(&response).unwrap());
@@ -194,7 +195,7 @@ async fn test_messages_get() {
         user: "afa".into(),
         ..Default::default()
     };
-    let result = client.messages(msg).await;
+    let result = client.api().messages(msg).await;
     assert!(result.is_ok());
     let response = result.unwrap();
     println!("{:}", serde_json::to_string_pretty(&response).unwrap());
@@ -205,7 +206,7 @@ async fn test_messages_get() {
 async fn test_parameters() {
     let client = get_client_default();
     let msg = request::ParametersRequest { user: "afa".into() };
-    let result = client.parameters(msg).await;
+    let result = client.api().parameters(msg).await;
     assert!(result.is_ok());
     let response = result.unwrap();
     println!("{:}", serde_json::to_string_pretty(&response).unwrap());
@@ -219,7 +220,7 @@ async fn test_chat_messages_stop() {
         task_id: "task_id".into(),
         user: "afa".into(),
     };
-    let result = client.chat_messages_stop(msg).await;
+    let result = client.api().chat_messages_stop(msg).await;
     assert!(result.is_ok());
     let response = result.unwrap();
     println!("{:}", serde_json::to_string_pretty(&response).unwrap());
@@ -234,11 +235,11 @@ async fn test_messages_suggested() {
         user: "afa".into(),
         ..Default::default()
     };
-    let result = client.chat_messages(msg).await;
+    let result = client.api().chat_messages(msg).await;
     let message_id = result.unwrap().base.message_id;
     // get suggested messages
     let msg = request::MessagesSuggestedRequest { message_id };
-    let result = client.messages_suggested(msg).await;
+    let result = client.api().messages_suggested(msg).await;
     println!("{:?}", result);
     assert!(result.is_ok());
     let response = result.unwrap();
@@ -252,7 +253,7 @@ async fn test_conversations_delete() {
         conversation_id: "40d530ea-f743-4c7a-9639-bbdae4ef6e6d".into(),
         user: "afa".into(),
     };
-    let result = client.conversations_delete(msg).await;
+    let result = client.api().conversations_delete(msg).await;
     println!("{:?}", result);
     // assert!(result.is_ok());
     // let response = result.unwrap();
@@ -263,7 +264,7 @@ async fn test_conversations_delete() {
 async fn test_meta() {
     let client = get_client(Some("app-iTiQkNf5LUbMq0mG0QdxXTob"));
     let msg = request::MetaRequest { user: "afa".into() };
-    let result = client.meta(msg).await;
+    let result = client.api().meta(msg).await;
     assert!(result.is_ok());
     let response = result.unwrap();
     println!("{:}", serde_json::to_string_pretty(&response).unwrap());
@@ -277,7 +278,7 @@ async fn test_text_to_audio() {
         user: "afa".into(),
         ..Default::default()
     };
-    let result = client.text_to_audio(msg).await;
+    let result = client.api().text_to_audio(msg).await;
     println!("{:?}", result);
     assert!(result.is_ok());
     let bytes = result.unwrap();
@@ -294,7 +295,7 @@ async fn test_audio_to_text() {
         file: vec_u8.into(),
         user: "afa".into(),
     };
-    let result = client.audio_to_text(msg).await;
+    let result = client.api().audio_to_text(msg).await;
     println!("{:?}", result);
     assert!(result.is_ok());
 }
@@ -308,7 +309,7 @@ async fn test_files_upload() {
         file: vec_u8.into(),
         user: "afa".into(),
     };
-    let result = client.files_upload(msg).await;
+    let result = client.api().files_upload(msg).await;
     println!("{:?}", result);
     assert!(result.is_ok());
 }
@@ -328,7 +329,7 @@ Chatflow is set to overtake "expert mode" in current Chatbot apps. You may choos
         user: "afa".into(),
         ..Default::default()
     };
-    let result = client.workflows_run(msg).await;
+    let result = client.api().workflows_run(msg).await;
     assert!(result.is_ok());
     let response = result.unwrap();
     println!("{:}", serde_json::to_string_pretty(&response).unwrap());
@@ -351,6 +352,7 @@ Chatflow is set to overtake "expert mode" in current Chatbot apps. You may choos
     };
 
     let result = client
+        .api()
         .workflows_run_stream(msg, |e| {
             println!("{:?}", e);
             match e {
@@ -379,7 +381,7 @@ async fn test_workflows_stop() {
         task_id: "4ad31d44-7845-4dc3-893d-42211e800378".into(),
         user: "afa".into(),
     };
-    let result = client.workflows_stop(msg).await;
+    let result = client.api().workflows_stop(msg).await;
     println!("{:?}", result);
     assert!(result.is_ok());
     let response = result.unwrap();
@@ -401,7 +403,7 @@ async fn test_completion_messages_simple() {
         user: "afa".into(),
         ..Default::default()
     };
-    let result = client.completion_messages(msg).await;
+    let result = client.api().completion_messages(msg).await;
     println!("{:?}", result);
     assert!(result.is_ok());
     let response = result.unwrap();
@@ -425,6 +427,7 @@ async fn test_completion_messages_stream() {
     };
 
     let result = client
+        .api()
         .completion_messages_stream(msg, |e| {
             println!("{:?}", e);
             match e {
@@ -449,9 +452,42 @@ async fn test_completion_messages_stop() {
         task_id: "task_id".into(),
         user: "afa".into(),
     };
-    let result = client.completion_messages_stop(msg).await;
+    let result = client.api().completion_messages_stop(msg).await;
     println!("{:?}", result);
     assert!(result.is_ok());
     let response = result.unwrap();
     println!("{:}", serde_json::to_string_pretty(&response).unwrap());
+}
+
+#[tokio::test]
+async fn test_reuse_api() {
+    let client = get_client_default();
+    let mut api = client.api();
+    api.before_send(|mut req| {
+        let headers = req.headers_mut();
+        // rewrite the authorization header
+        let mut bearer_auth = header::HeaderValue::from_static("Bearer BEARER_TOKEN");
+        bearer_auth.set_sensitive(true);
+        headers.insert(header::AUTHORIZATION, bearer_auth);
+        // rewrite the url
+        let url = req.url_mut();
+        url.set_host(Some("api.dify.ai")).unwrap();
+        url.set_port(None).unwrap();
+        url.set_scheme("https").unwrap();
+        // println!("{:?}", url);
+        println!("{:?}", req);
+        req
+    });
+
+    let msg = request::ChatMessagesRequest {
+        query: "how are you?".into(),
+        user: "afa".into(),
+        ..Default::default()
+    };
+    let msg1 = msg.clone();
+    let result = api.chat_messages(msg).await;
+    println!("{:?}\n", result);
+
+    let result1 = api.chat_messages(msg1).await;
+    println!("{:?}\n", result1);
 }

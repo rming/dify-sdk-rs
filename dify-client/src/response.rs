@@ -1,12 +1,81 @@
+//! This module contains the response structures used in the Dify SDK.
+//!
+//! It includes error responses, result responses, chat message responses, and more.
+//! These structures are used to deserialize JSON responses from the Dify API.
+//!
+//! # Examples
+//!
+//! Deserialize an error response:
+//!
+//! ```no_run
+//! use dify_client::response::ErrorResponse;
+//!
+//! let json = r#"
+//!     {
+//!         "code": "unknown_error",
+//!         "message": "An unknown error occurred",
+//!         "status": 503
+//!     }
+//! "#;
+//!
+//! let error_response: ErrorResponse = serde_json::from_str(json).unwrap();
+//!
+//! assert_eq!(error_response.code, "unknown_error");
+//! assert_eq!(error_response.message, "An unknown error occurred");
+//! assert_eq!(error_response.status, 503);
+//! ```
+//!
+//! Deserialize a chat message response:
+//!
+//! ```no_run
+//! use dify_client::response::{ChatMessagesResponse, AppMode};
+//! use serde_json::json;
+//! use std::collections::HashMap;
+//!
+//! let json = r#"
+//!     {
+//!         "base": {
+//!             "message_id": "12345",
+//!             "conversation_id": "67890",
+//!             "created_at": 1705395332
+//!         },
+//!         "event": "message",
+//!         "mode": "chat",
+//!         "answer": "Hello, how can I help you?",
+//!         "metadata": {
+//!             "key1": "value1",
+//!             "key2": "value2"
+//!         }
+//!     }
+//! "#;
+//!
+//! let mut metadata = HashMap::new();
+//! metadata.insert("key1".to_string(), json!("value1"));
+//! metadata.insert("key2".to_string(), json!("value2"));
+//!
+//! let chat_response: ChatMessagesResponse = serde_json::from_str(json).unwrap();
+//!
+//! assert_eq!(chat_response.base.message_id, "12345");
+//! assert_eq!(chat_response.base.conversation_id.unwrap(), "67890");
+//! assert_eq!(chat_response.base.created_at, 1705395332);
+//! assert_eq!(chat_response.event, "message");
+//! assert_eq!(chat_response.mode, AppMode::Chat);
+//! assert_eq!(chat_response.answer, "Hello, how can I help you?");
+//! assert_eq!(chat_response.metadata, metadata);
+//! ```
+//!
 use super::request::{Feedback, FileType};
+use anyhow::{bail, Result};
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
 use serde_with::{serde_as, EnumMap};
-use std::collections::HashMap;
-use std::fmt::{Display, Formatter, Result as FmtResult};
+use std::{
+    collections::HashMap,
+    fmt::{Display, Formatter, Result as FmtResult},
+};
 
 /// 错误响应
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ErrorResponse {
     pub code: String,
     pub message: String,
@@ -20,23 +89,26 @@ impl Display for ErrorResponse {
 }
 
 impl ErrorResponse {
-    pub fn unknown(message: String) -> Self {
+    pub fn unknown<T>(message: T) -> Self
+    where
+        T: ToString,
+    {
         ErrorResponse {
             code: "unknown_error".into(),
-            message,
+            message: message.to_string(),
             status: 503,
         }
     }
 }
 
 /// 通用结果响应
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ResultResponse {
     pub result: String,
 }
 
 /// 对话基础信息
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MessageBase {
     /// 消息唯一 ID
     pub message_id: String,
@@ -47,7 +119,7 @@ pub struct MessageBase {
 }
 
 /// 发送对话消息的响应
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ChatMessagesResponse {
     /// 消息基础信息
     #[serde(flatten)]
@@ -63,7 +135,7 @@ pub struct ChatMessagesResponse {
 }
 
 /// 流式模式分块数据事件
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "event", rename_all = "snake_case")]
 pub enum SteamMessageEvent {
     /// LLM 返回文本块事件，即：完整的文本以分块的方式输出。
@@ -201,7 +273,7 @@ pub enum SteamMessageEvent {
 }
 
 /// workflow 详细内容
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorkflowStartedData {
     /// workflow 执行 ID
     pub id: String,
@@ -216,7 +288,7 @@ pub struct WorkflowStartedData {
 }
 
 /// workflow 执行结束详细内容
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorkflowFinishedData {
     /// workflow 执行 ID
     pub id: String,
@@ -243,7 +315,7 @@ pub struct WorkflowFinishedData {
 }
 
 /// node 详细内容
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NodeStartedData {
     /// workflow 执行 ID
     pub id: String,
@@ -264,7 +336,7 @@ pub struct NodeStartedData {
 }
 
 /// node 执行结束详细内容
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NodeFinishedData {
     /// node 执行 ID
     pub id: String,
@@ -295,7 +367,7 @@ pub struct NodeFinishedData {
 }
 
 /// 执行结束状态
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum FinishedStatus {
     Running,
@@ -305,7 +377,7 @@ pub enum FinishedStatus {
 }
 
 /// 执行节点元数据
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExecutionMetadata {
     /// 总使用 tokens
     pub total_tokens: Option<u32>,
@@ -316,7 +388,7 @@ pub struct ExecutionMetadata {
 }
 
 /// 应用类型
-#[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub enum AppMode {
     Completion,
@@ -328,7 +400,7 @@ pub enum AppMode {
 }
 
 /// 获取下一轮建议问题列表的响应
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct MessagesSuggestedResponse {
     pub result: String,
     /// 建议问题列表
@@ -336,7 +408,7 @@ pub struct MessagesSuggestedResponse {
 }
 
 /// 获取会话历史消息的响应
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct MessagesResponse {
     /// 返回条数，若传入超过系统限制，返回系统限制数量
     pub limit: u32,
@@ -347,7 +419,7 @@ pub struct MessagesResponse {
 }
 
 /// 历史消息数据
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct MessageData {
     /// 消息 ID
     pub id: String,
@@ -370,7 +442,7 @@ pub struct MessageData {
 }
 
 /// 历史消息数据中的文件信息
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MessageFile {
     /// ID
     pub id: String,
@@ -384,7 +456,7 @@ pub struct MessageFile {
 }
 
 /// 文件归属方
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum BelongsTo {
     User,
@@ -392,14 +464,14 @@ pub enum BelongsTo {
 }
 
 /// 历史消息数据中的反馈信息
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct MessageFeedback {
     /// 点赞 like / 点踩 dislike
     pub rating: Feedback,
 }
 
 /// 获取会话列表的响应
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ConversationsResponse {
     /// 是否存在下一页
     pub has_more: bool,
@@ -410,7 +482,7 @@ pub struct ConversationsResponse {
 }
 
 /// 会话数据
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ConversationData {
     /// 会话 ID
     pub id: String,
@@ -425,7 +497,7 @@ pub struct ConversationData {
 }
 
 #[serde_as]
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 /// 获取应用配置信息的响应
 pub struct ParametersResponse {
     /// 开场白
@@ -448,35 +520,35 @@ pub struct ParametersResponse {
     pub system_parameters: SystemParameters,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 /// 启用回答后给出推荐问题。
 pub struct ParameterSuggestedQuestionsAfterAnswer {
     /// 是否开启
     pub enabled: bool,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 /// 语音转文本
 pub struct ParameterSpeechToText {
     /// 是否开启
     pub enabled: bool,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 /// 引用和归属
 pub struct ParameterRetrieverResource {
     /// 是否开启
     pub enabled: bool,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 /// 标记回复
 pub struct ParameterAnnotationReply {
     /// 是否开启
     pub enabled: bool,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "snake_case")]
 /// 用户输入表单配置
 pub enum ParameterUserInputFormItem {
@@ -520,7 +592,7 @@ pub enum ParameterUserInputFormItem {
     },
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "snake_case")]
 /// 文件上传配置
 pub enum ParameterFileUploadItem {
@@ -536,7 +608,7 @@ pub enum ParameterFileUploadItem {
 }
 
 /// 文件传递方式
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum TransferMethod {
     RemoteUrl,
@@ -544,20 +616,20 @@ pub enum TransferMethod {
 }
 
 /// 系统参数
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct SystemParameters {
     /// 图片文件上传大小限制（MB）
     pub image_file_size_limit: String,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 /// 获取应用Meta信息的响应
 pub struct MetaResponse {
     pub tool_icons: HashMap<String, ToolIcon>,
 }
 
 /// 工具图标
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum ToolIcon {
     Url(String),
@@ -565,14 +637,14 @@ pub enum ToolIcon {
 }
 
 /// 语音转文字响应
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct AudioToTextResponse {
     /// 输出文字
     pub text: String,
 }
 
 /// 上传文件响应
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct FilesUploadResponse {
     /// ID
     pub id: String,
@@ -591,7 +663,7 @@ pub struct FilesUploadResponse {
 }
 
 /// 执行 workflow 响应
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct WorkflowsRunResponse {
     /// workflow 执行 ID
     pub workflow_run_id: String,
@@ -602,7 +674,7 @@ pub struct WorkflowsRunResponse {
 }
 
 /// 文本生成的响应
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CompletionMessagesResponse {
     /// 消息基础信息
     #[serde(flatten)]
@@ -617,4 +689,25 @@ pub struct CompletionMessagesResponse {
     pub answer: String,
     /// 元数据
     pub metadata: HashMap<String, JsonValue>,
+}
+
+/// 解析响应
+pub(crate) fn parse_response<T>(text: &str) -> Result<T>
+where
+    T: serde::de::DeserializeOwned,
+{
+    if let Ok(data) = serde_json::from_str::<T>(text) {
+        Ok(data)
+    } else {
+        parse_error_response(text)
+    }
+}
+
+/// 解析错误响应
+pub(crate) fn parse_error_response<T>(text: &str) -> Result<T> {
+    if let Ok(err) = serde_json::from_str::<ErrorResponse>(text) {
+        bail!(err)
+    } else {
+        bail!(ErrorResponse::unknown(text))
+    }
 }
