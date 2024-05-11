@@ -95,7 +95,7 @@ async fn test_chat_message_stream() {
         .chat_messages_stream(msg, |e| {
             println!("{:?}", e);
             match e {
-                response::SteamMessageEvent::Message { answer, .. } => {
+                response::SseMessageEvent::Message { answer, .. } => {
                     return Ok(Some(answer));
                 }
                 _ => Ok(None),
@@ -123,7 +123,7 @@ async fn test_chat_message_stream_agent() {
         .chat_messages_stream(msg, |e| {
             println!("{:?}", e);
             match e {
-                response::SteamMessageEvent::AgentMessage { answer, .. } => {
+                response::SseMessageEvent::AgentMessage { answer, .. } => {
                     return Ok(Some(answer));
                 }
                 _ => Ok(None),
@@ -384,7 +384,7 @@ Chatflow is set to overtake "expert mode" in current Chatbot apps. You may choos
         .workflows_run_stream(msg, |e| {
             println!("{:?}", e);
             match e {
-                response::SteamMessageEvent::WorkflowFinished { data, .. } => {
+                response::SseMessageEvent::WorkflowFinished { data, .. } => {
                     let output = data
                         .outputs
                         .map(|o| o["output"].as_str().map(|s| s.to_owned()))
@@ -459,7 +459,7 @@ async fn test_completion_messages_stream() {
         .completion_messages_stream(msg, |e| {
             println!("{:?}", e);
             match e {
-                response::SteamMessageEvent::Message { answer, .. } => {
+                response::SseMessageEvent::Message { answer, .. } => {
                     return Ok(Some(answer));
                 }
                 _ => Ok(None),

@@ -57,7 +57,7 @@ use super::{
         parse_error_response, parse_response, AudioToTextResponse, ChatMessagesResponse,
         CompletionMessagesResponse, ConversationsResponse, FilesUploadResponse, MessagesResponse,
         MessagesSuggestedResponse, MetaResponse, ParametersResponse, ResultResponse,
-        SteamMessageEvent, WorkflowsRunResponse,
+        SseMessageEvent, WorkflowsRunResponse,
     },
 };
 use anyhow::{bail, Result};
@@ -267,7 +267,7 @@ impl<'a> Api<'a> {
         callback: F,
     ) -> Result<Vec<T>>
     where
-        F: Fn(SteamMessageEvent) -> Result<Option<T>> + Send + Sync,
+        F: Fn(SseMessageEvent) -> Result<Option<T>> + Send + Sync,
     {
         req_data.response_mode = ResponseMode::Streaming;
 
@@ -279,7 +279,7 @@ impl<'a> Api<'a> {
         while let Some(event) = stream.next().await {
             let event = event?;
             if event.event == "message" {
-                match serde_json::from_str::<SteamMessageEvent>(&event.data) {
+                match serde_json::from_str::<SseMessageEvent>(&event.data) {
                     Ok(msg_event) => {
                         if let Some(answer) = callback(msg_event)? {
                             ret.push(answer);
@@ -659,7 +659,7 @@ impl<'a> Api<'a> {
         callback: F,
     ) -> Result<Vec<T>>
     where
-        F: Fn(SteamMessageEvent) -> Result<Option<T>> + Send + Sync,
+        F: Fn(SseMessageEvent) -> Result<Option<T>> + Send + Sync,
     {
         req_data.response_mode = ResponseMode::Streaming;
 
@@ -671,7 +671,7 @@ impl<'a> Api<'a> {
         while let Some(event) = stream.next().await {
             let event = event?;
             if event.event == "message" {
-                match serde_json::from_str::<SteamMessageEvent>(&event.data) {
+                match serde_json::from_str::<SseMessageEvent>(&event.data) {
                     Ok(msg_event) => {
                         if let Some(answer) = callback(msg_event)? {
                             ret.push(answer);
@@ -752,7 +752,7 @@ impl<'a> Api<'a> {
         callback: F,
     ) -> Result<Vec<T>>
     where
-        F: Fn(SteamMessageEvent) -> Result<Option<T>> + Send + Sync,
+        F: Fn(SseMessageEvent) -> Result<Option<T>> + Send + Sync,
     {
         req_data.response_mode = ResponseMode::Streaming;
 
@@ -764,7 +764,7 @@ impl<'a> Api<'a> {
         while let Some(event) = stream.next().await {
             let event = event?;
             if event.event == "message" {
-                match serde_json::from_str::<SteamMessageEvent>(&event.data) {
+                match serde_json::from_str::<SseMessageEvent>(&event.data) {
                     Ok(msg_event) => {
                         if let Some(answer) = callback(msg_event)? {
                             ret.push(answer);

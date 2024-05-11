@@ -137,7 +137,7 @@ pub struct ChatMessagesResponse {
 /// 流式模式分块数据事件
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "event", rename_all = "snake_case")]
-pub enum SteamMessageEvent {
+pub enum SseMessageEvent {
     /// LLM 返回文本块事件，即：完整的文本以分块的方式输出。
     Message {
         /// 消息基础信息
