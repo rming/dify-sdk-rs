@@ -65,13 +65,18 @@
 //! ```
 //!
 use super::request::{Feedback, FileType};
-use anyhow::{bail, Result as AnyResult};
+use anyhow::{anyhow, bail, Result as AnyResult};
+use eventsource_stream::EventStream;
+use futures::Stream;
+use pin_project_lite::pin_project;
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
 use serde_with::{serde_as, EnumMap};
 use std::{
     collections::HashMap,
     fmt::{Display, Formatter, Result as FmtResult},
+    pin::Pin,
+    task::{Context, Poll},
 };
 
 /// 错误响应
@@ -726,6 +731,60 @@ pub struct CompletionMessagesResponse {
     pub answer: String,
     /// 元数据
     pub metadata: HashMap<String, JsonValue>,
+}
+
+pin_project! {
+    /// A Stream of SSE message events.
+    pub struct MessageEventStream<S>
+    {
+        #[pin]
+        stream: EventStream<S>,
+        terminated: bool,
+    }
+}
+
+impl<S> MessageEventStream<S> {
+    /// Initialize the MessageEventStream with a Stream
+    pub fn new(stream: EventStream<S>) -> Self {
+        Self {
+            stream,
+            terminated: false,
+        }
+    }
+}
+
+impl<S, B, E> Stream for MessageEventStream<S>
+where
+    S: Stream<Item = Result<B, E>>,
+    B: AsRef<[u8]>,
+    E: Display,
+{
+    type Item = AnyResult<SseMessageEvent>;
+
+    fn poll_next(self: Pin<&mut Self>, cx: &mut Context) -> Poll<Option<Self::Item>> {
+        let mut this = self.project();
+        if *this.terminated {
+            return Poll::Ready(None);
+        }
+
+        loop {
+            match this.stream.as_mut().poll_next(cx) {
+                Poll::Ready(Some(Ok(event))) => match event.event.as_str() {
+                    "message" => match serde_json::from_str::<SseMessageEvent>(&event.data) {
+                        Ok(msg_event) => return Poll::Ready(Some(Ok(msg_event))),
+                        Err(e) => return Poll::Ready(Some(Err(e.into()))),
+                    },
+                    _ => {}
+                },
+                Poll::Ready(Some(Err(e))) => return Poll::Ready(Some(Err(anyhow!(e.to_string())))),
+                Poll::Ready(None) => {
+                    *this.terminated = true;
+                    return Poll::Ready(None);
+                }
+                Poll::Pending => return Poll::Pending,
+            }
+        }
+    }
 }
 
 /// 解析响应

@@ -55,14 +55,14 @@ use super::{
     },
     response::{
         parse_error_response, parse_response, AudioToTextResponse, ChatMessagesResponse,
-        CompletionMessagesResponse, ConversationsResponse, FilesUploadResponse, MessagesResponse,
-        MessagesSuggestedResponse, MetaResponse, ParametersResponse, ResultResponse,
-        SseMessageEvent, WorkflowsRunResponse,
+        CompletionMessagesResponse, ConversationsResponse, FilesUploadResponse, MessageEventStream,
+        MessagesResponse, MessagesSuggestedResponse, MetaResponse, ParametersResponse,
+        ResultResponse, SseMessageEvent, WorkflowsRunResponse,
     },
 };
 use anyhow::{bail, Result as AnyResult};
 use eventsource_stream::Eventsource;
-use futures::stream::StreamExt;
+use futures::stream::{Stream, StreamExt};
 use std::fmt::{Display, Formatter, Result as FmtResult};
 
 /// API 路径
@@ -257,39 +257,22 @@ impl<'a> Api<'a> {
     /// * `callback` - The callback function to process the stream events.
     ///
     /// # Returns
-    /// A `Result` containing the processed events or an error.
+    /// A `Result` containing SSE message event stream or an error.
     ///
     /// # Errors
     /// Returns an error if the request cannot be created or the stream fails.
-    pub async fn chat_messages_stream<F, T>(
+    // pub async fn chat_messages_stream(&self, mut req_data: ChatMessagesRequest) {
+    pub async fn chat_messages_stream(
         &self,
         mut req_data: ChatMessagesRequest,
-        callback: F,
-    ) -> AnyResult<Vec<T>>
-    where
-        F: Fn(SseMessageEvent) -> AnyResult<Option<T>> + Send + Sync,
-    {
+    ) -> AnyResult<MessageEventStream<impl Stream<Item = Result<Bytes, reqwest::Error>>>> {
         req_data.response_mode = ResponseMode::Streaming;
 
         let req = self.create_chat_messages_request(req_data)?;
         let resp = self.send(req).await?;
-        let mut stream = resp.bytes_stream().eventsource();
-
-        let mut ret: Vec<T> = Vec::new();
-        while let Some(event) = stream.next().await {
-            let event = event?;
-            if event.event == "message" {
-                match serde_json::from_str::<SseMessageEvent>(&event.data) {
-                    Ok(msg_event) => {
-                        if let Some(answer) = callback(msg_event)? {
-                            ret.push(answer);
-                        }
-                    }
-                    Err(e) => bail!("data: {}, error: {}", event.data, e),
-                };
-            }
-        }
-        Ok(ret)
+        let stream = resp.bytes_stream().eventsource();
+        let s = MessageEventStream::new(stream);
+        Ok(s)
     }
 
     /// Sends a request to upload files to the Dify API and returns the response.  
