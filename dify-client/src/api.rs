@@ -55,9 +55,9 @@ use super::{
     },
     response::{
         parse_error_response, parse_response, AudioToTextResponse, ChatMessagesResponse,
-        CompletionMessagesResponse, ConversationsResponse, FilesUploadResponse, MessageEventStream,
-        MessagesResponse, MessagesSuggestedResponse, MetaResponse, ParametersResponse,
-        ResultResponse, SseMessageEvent, WorkflowsRunResponse,
+        CompletionMessagesResponse, ConversationsResponse, FilesUploadResponse, MessagesResponse,
+        MessagesSuggestedResponse, MetaResponse, ParametersResponse, ResultResponse,
+        SseMessageEvent, SseMessageEventStream, WorkflowsRunResponse,
     },
 };
 use anyhow::{bail, Result as AnyResult};
@@ -265,13 +265,13 @@ impl<'a> Api<'a> {
     pub async fn chat_messages_stream(
         &self,
         mut req_data: ChatMessagesRequest,
-    ) -> AnyResult<MessageEventStream<impl Stream<Item = Result<Bytes, reqwest::Error>>>> {
+    ) -> AnyResult<SseMessageEventStream<impl Stream<Item = Result<Bytes, reqwest::Error>>>> {
         req_data.response_mode = ResponseMode::Streaming;
 
         let req = self.create_chat_messages_request(req_data)?;
         let resp = self.send(req).await?;
         let stream = resp.bytes_stream().eventsource();
-        let s = MessageEventStream::new(stream);
+        let s = SseMessageEventStream::new(stream);
         Ok(s)
     }
 

@@ -735,7 +735,7 @@ pub struct CompletionMessagesResponse {
 
 pin_project! {
     /// A Stream of SSE message events.
-    pub struct MessageEventStream<S>
+    pub struct SseMessageEventStream<S>
     {
         #[pin]
         stream: EventStream<S>,
@@ -743,8 +743,8 @@ pin_project! {
     }
 }
 
-impl<S> MessageEventStream<S> {
-    /// Initialize the MessageEventStream with a Stream
+impl<S> SseMessageEventStream<S> {
+    /// Initialize the SSE message events stream with a Stream
     pub fn new(stream: EventStream<S>) -> Self {
         Self {
             stream,
@@ -753,7 +753,7 @@ impl<S> MessageEventStream<S> {
     }
 }
 
-impl<S, B, E> Stream for MessageEventStream<S>
+impl<S, B, E> Stream for SseMessageEventStream<S>
 where
     S: Stream<Item = Result<B, E>>,
     B: AsRef<[u8]>,
