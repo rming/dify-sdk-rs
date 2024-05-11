@@ -169,7 +169,6 @@ pub enum SteamMessageEvent {
         #[serde(flatten)]
         extra: HashMap<String, JsonValue>,
     },
-
     /// 消息结束事件，收到此事件则代表流式返回结束。
     MessageEnd {
         /// 消息基础信息
@@ -253,6 +252,44 @@ pub enum SteamMessageEvent {
         data: WorkflowFinishedData,
         #[serde(flatten)]
         extra: HashMap<String, JsonValue>,
+    },
+    /// Agent模式下返回文本块事件，即：在Agent模式下，文章的文本以分块的方式输出（仅Agent模式下使用）
+    AgentMessage {
+        /// 消息基础信息
+        #[serde(flatten)]
+        base: Option<MessageBase>,
+        /// 消息 ID
+        id: String,
+        /// 任务 ID，用于请求跟踪和下方的停止响应接口
+        task_id: String,
+        /// LLM 返回文本块内容
+        answer: String,
+        #[serde(flatten)]
+        extra: HashMap<String, JsonValue>,
+    },
+    /// Agent模式下有关Agent思考步骤的相关内容，涉及到工具调用（仅Agent模式下使用）
+    AgentThought {
+        /// 消息基础信息
+        #[serde(flatten)]
+        base: Option<MessageBase>,
+        /// 消息 ID
+        id: String,
+        /// 任务 ID，用于请求跟踪和下方的停止响应接口
+        task_id: String,
+        /// agent_thought在消息中的位置，如第一轮迭代position为1
+        position: u32,
+        /// agent的思考内容
+        thought: String,
+        /// 工具调用的返回结果
+        observation: String,
+        /// 使用的工具列表，以 ; 分割多个工具
+        tool: String,
+        /// 工具的标签
+        tool_labels: JsonValue,
+        /// 工具的输入，JSON格式的字符串
+        tool_input: String,
+        /// 当前 agent_thought 关联的文件ID
+        message_files: Vec<String>,
     },
     /// 流式输出过程中出现的异常会以 stream event 形式输出，收到异常事件后即结束。
     Error {

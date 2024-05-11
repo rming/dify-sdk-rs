@@ -109,6 +109,34 @@ async fn test_chat_message_stream() {
     println!("{:?}", answer);
 }
 
+#[tokio::test]
+async fn test_chat_message_stream_agent() {
+    let client = get_client(Some("app-iTiQkNf5LUbMq0mG0QdxXTob"));
+    let msg = request::ChatMessagesRequest {
+        query: "write a story in 100 words about life".into(),
+        user: "afa".into(),
+        ..Default::default()
+    };
+
+    let result = client
+        .api()
+        .chat_messages_stream(msg, |e| {
+            println!("{:?}", e);
+            match e {
+                response::SteamMessageEvent::AgentMessage { answer, .. } => {
+                    return Ok(Some(answer));
+                }
+                _ => Ok(None),
+            }
+        })
+        .await;
+    println!("{:?}", result);
+    assert!(result.is_ok());
+    let answers = result.unwrap();
+    let answer = answers.concat();
+    println!("{:?}", answer);
+}
+
 fn assert_chat_message_result(result: Result<response::ChatMessagesResponse>) {
     if let Err(e) = result {
         match e.downcast::<response::ErrorResponse>() {
