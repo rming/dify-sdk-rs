@@ -60,7 +60,7 @@ use super::{
         SseMessageEvent, WorkflowsRunResponse,
     },
 };
-use anyhow::{bail, Result};
+use anyhow::{bail, Result as AnyResult};
 use eventsource_stream::Eventsource;
 use futures::stream::StreamExt;
 use std::fmt::{Display, Formatter, Result as FmtResult};
@@ -193,7 +193,7 @@ impl<'a> Api<'a> {
     ///
     /// # Returns
     /// A `Result` containing the response or an error.
-    async fn send(&self, mut req: Request) -> Result<reqwest::Response> {
+    async fn send(&self, mut req: Request) -> AnyResult<reqwest::Response> {
         if let Some(hook) = self.before_send_hook.as_ref() {
             req = hook(req);
         }
@@ -221,7 +221,7 @@ impl<'a> Api<'a> {
     ///
     /// # Errors
     /// Returns an error if the request cannot be created.
-    fn create_chat_messages_request(&self, req: ChatMessagesRequest) -> Result<Request> {
+    fn create_chat_messages_request(&self, req: ChatMessagesRequest) -> AnyResult<Request> {
         let url = self.build_request_api(ApiPath::ChatMessages);
         self.client.create_request(url, Method::POST, req)
     }
@@ -236,7 +236,7 @@ impl<'a> Api<'a> {
     pub async fn chat_messages(
         &self,
         mut req_data: ChatMessagesRequest,
-    ) -> Result<ChatMessagesResponse> {
+    ) -> AnyResult<ChatMessagesResponse> {
         req_data.response_mode = ResponseMode::Blocking;
 
         let req = self.create_chat_messages_request(req_data)?;
@@ -265,9 +265,9 @@ impl<'a> Api<'a> {
         &self,
         mut req_data: ChatMessagesRequest,
         callback: F,
-    ) -> Result<Vec<T>>
+    ) -> AnyResult<Vec<T>>
     where
-        F: Fn(SseMessageEvent) -> Result<Option<T>> + Send + Sync,
+        F: Fn(SseMessageEvent) -> AnyResult<Option<T>> + Send + Sync,
     {
         req_data.response_mode = ResponseMode::Streaming;
 
@@ -302,7 +302,10 @@ impl<'a> Api<'a> {
     ///
     /// # Returns
     /// A `Result` containing the files upload response or an error.
-    pub async fn files_upload(&self, req_data: FilesUploadRequest) -> Result<FilesUploadResponse> {
+    pub async fn files_upload(
+        &self,
+        req_data: FilesUploadRequest,
+    ) -> AnyResult<FilesUploadResponse> {
         if !infer::is_image(&req_data.file) {
             bail!("FilesUploadRequest.File Illegal");
         }
@@ -334,7 +337,7 @@ impl<'a> Api<'a> {
         &self,
         mut req_data: StreamTaskStopRequest,
         api_path: ApiPath,
-    ) -> Result<ResultResponse> {
+    ) -> AnyResult<ResultResponse> {
         if req_data.task_id.is_empty() {
             bail!("StreamTaskStopRequest.TaskId Illegal");
         }
@@ -359,7 +362,7 @@ impl<'a> Api<'a> {
     pub async fn chat_messages_stop(
         &self,
         req_data: StreamTaskStopRequest,
-    ) -> Result<ResultResponse> {
+    ) -> AnyResult<ResultResponse> {
         self.stream_task_stop(req_data, ApiPath::ChatMessagesStop)
             .await
     }
@@ -374,7 +377,7 @@ impl<'a> Api<'a> {
     pub async fn messages_suggested(
         &self,
         mut req_data: MessagesSuggestedRequest,
-    ) -> Result<MessagesSuggestedResponse> {
+    ) -> AnyResult<MessagesSuggestedResponse> {
         if req_data.message_id.is_empty() {
             bail!("MessagesSuggestedRequest.MessageID Illegal");
         }
@@ -399,7 +402,7 @@ impl<'a> Api<'a> {
     pub async fn messages_feedbacks(
         &self,
         mut req_data: MessagesFeedbacksRequest,
-    ) -> Result<ResultResponse> {
+    ) -> AnyResult<ResultResponse> {
         if req_data.message_id.is_empty() {
             bail!("MessagesFeedbacksRequest.MessageID Illegal");
         }
@@ -424,7 +427,7 @@ impl<'a> Api<'a> {
     pub async fn conversations(
         &self,
         req_data: ConversationsRequest,
-    ) -> Result<ConversationsResponse> {
+    ) -> AnyResult<ConversationsResponse> {
         if req_data.user.is_empty() {
             bail!("ConversationsRequest.User Illegal");
         }
@@ -443,7 +446,7 @@ impl<'a> Api<'a> {
     ///
     /// # Returns
     /// A `Result` containing the messages response or an error.
-    pub async fn messages(&self, req_data: MessagesRequest) -> Result<MessagesResponse> {
+    pub async fn messages(&self, req_data: MessagesRequest) -> AnyResult<MessagesResponse> {
         if req_data.conversation_id.is_empty() {
             bail!("MessagesRequest.ConversationID Illegal");
         }
@@ -465,7 +468,7 @@ impl<'a> Api<'a> {
     pub async fn conversations_renaming(
         &self,
         mut req_data: ConversationsRenameRequest,
-    ) -> Result<ResultResponse> {
+    ) -> AnyResult<ResultResponse> {
         if req_data.conversation_id.is_empty() {
             bail!("ConversationsRenameRequest.ConversationID Illegal");
         }
@@ -493,7 +496,7 @@ impl<'a> Api<'a> {
     pub async fn conversations_delete(
         &self,
         mut req_data: ConversationsDeleteRequest,
-    ) -> Result<()> {
+    ) -> AnyResult<()> {
         if req_data.conversation_id.is_empty() {
             bail!("ConversationsDeleteRequest.ConversationID Illegal");
         }
@@ -521,7 +524,7 @@ impl<'a> Api<'a> {
     ///
     /// # Returns
     /// A `Result` containing the audio to text response or an error.
-    pub async fn text_to_audio(&self, req_data: TextToAudioRequest) -> Result<Bytes> {
+    pub async fn text_to_audio(&self, req_data: TextToAudioRequest) -> AnyResult<Bytes> {
         if req_data.text.is_empty() {
             bail!("TextToAudioRequest.Text Illegal");
         }
@@ -550,7 +553,10 @@ impl<'a> Api<'a> {
     ///
     /// # Returns
     /// A `Result` containing the audio to text response or an error.
-    pub async fn audio_to_text(&self, req_data: AudioToTextRequest) -> Result<AudioToTextResponse> {
+    pub async fn audio_to_text(
+        &self,
+        req_data: AudioToTextRequest,
+    ) -> AnyResult<AudioToTextResponse> {
         if !infer::is_audio(&req_data.file) {
             bail!("AudioToTextRequest.File Illegal");
         }
@@ -576,7 +582,7 @@ impl<'a> Api<'a> {
     ///
     /// # Returns
     /// A `Result` containing the parameters response or an error.
-    pub async fn parameters(&self, req_data: ParametersRequest) -> Result<ParametersResponse> {
+    pub async fn parameters(&self, req_data: ParametersRequest) -> AnyResult<ParametersResponse> {
         if req_data.user.is_empty() {
             bail!("ParametersRequest.User Illegal");
         }
@@ -595,7 +601,7 @@ impl<'a> Api<'a> {
     ///
     /// # Returns
     /// A `Result` containing the meta response or an error.
-    pub async fn meta(&self, req_data: MetaRequest) -> Result<MetaResponse> {
+    pub async fn meta(&self, req_data: MetaRequest) -> AnyResult<MetaResponse> {
         if req_data.user.is_empty() {
             bail!("MetaRequest.User Illegal");
         }
@@ -614,7 +620,7 @@ impl<'a> Api<'a> {
     ///     
     /// # Returns
     /// A `Result` containing the request or an error.
-    fn create_workflows_run_request(&self, req: WorkflowsRunRequest) -> Result<Request> {
+    fn create_workflows_run_request(&self, req: WorkflowsRunRequest) -> AnyResult<Request> {
         let url = self.build_request_api(ApiPath::WorkflowsRun);
         self.client.create_request(url, Method::POST, req)
     }
@@ -629,7 +635,7 @@ impl<'a> Api<'a> {
     pub async fn workflows_run(
         &self,
         mut req_data: WorkflowsRunRequest,
-    ) -> Result<WorkflowsRunResponse> {
+    ) -> AnyResult<WorkflowsRunResponse> {
         req_data.response_mode = ResponseMode::Blocking;
 
         let req = self.create_workflows_run_request(req_data)?;
@@ -657,9 +663,9 @@ impl<'a> Api<'a> {
         &self,
         mut req_data: WorkflowsRunRequest,
         callback: F,
-    ) -> Result<Vec<T>>
+    ) -> AnyResult<Vec<T>>
     where
-        F: Fn(SseMessageEvent) -> Result<Option<T>> + Send + Sync,
+        F: Fn(SseMessageEvent) -> AnyResult<Option<T>> + Send + Sync,
     {
         req_data.response_mode = ResponseMode::Streaming;
 
@@ -691,7 +697,10 @@ impl<'a> Api<'a> {
     ///
     /// # Returns
     /// A `Result` containing the stream task stop response or an error.
-    pub async fn workflows_stop(&self, req_data: StreamTaskStopRequest) -> Result<ResultResponse> {
+    pub async fn workflows_stop(
+        &self,
+        req_data: StreamTaskStopRequest,
+    ) -> AnyResult<ResultResponse> {
         self.stream_task_stop(req_data, ApiPath::WorkflowsStop)
             .await
     }
@@ -706,7 +715,7 @@ impl<'a> Api<'a> {
     fn create_completion_messages_request(
         &self,
         req: CompletionMessagesRequest,
-    ) -> Result<Request> {
+    ) -> AnyResult<Request> {
         let url = self.build_request_api(ApiPath::CompletionMessages);
         self.client.create_request(url, Method::POST, req)
     }
@@ -722,7 +731,7 @@ impl<'a> Api<'a> {
     pub async fn completion_messages(
         &self,
         mut req_data: CompletionMessagesRequest,
-    ) -> Result<CompletionMessagesResponse> {
+    ) -> AnyResult<CompletionMessagesResponse> {
         req_data.response_mode = ResponseMode::Blocking;
 
         let req = self.create_completion_messages_request(req_data)?;
@@ -750,9 +759,9 @@ impl<'a> Api<'a> {
         &self,
         mut req_data: CompletionMessagesRequest,
         callback: F,
-    ) -> Result<Vec<T>>
+    ) -> AnyResult<Vec<T>>
     where
-        F: Fn(SseMessageEvent) -> Result<Option<T>> + Send + Sync,
+        F: Fn(SseMessageEvent) -> AnyResult<Option<T>> + Send + Sync,
     {
         req_data.response_mode = ResponseMode::Streaming;
 
@@ -788,7 +797,7 @@ impl<'a> Api<'a> {
     pub async fn completion_messages_stop(
         &self,
         req_data: StreamTaskStopRequest,
-    ) -> Result<ResultResponse> {
+    ) -> AnyResult<ResultResponse> {
         self.stream_task_stop(req_data, ApiPath::CompletionMessagesStop)
             .await
     }

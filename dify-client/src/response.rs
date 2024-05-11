@@ -65,7 +65,7 @@
 //! ```
 //!
 use super::request::{Feedback, FileType};
-use anyhow::{bail, Result};
+use anyhow::{bail, Result as AnyResult};
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
 use serde_with::{serde_as, EnumMap};
@@ -729,7 +729,7 @@ pub struct CompletionMessagesResponse {
 }
 
 /// 解析响应
-pub(crate) fn parse_response<T>(text: &str) -> Result<T>
+pub(crate) fn parse_response<T>(text: &str) -> AnyResult<T>
 where
     T: serde::de::DeserializeOwned,
 {
@@ -741,7 +741,7 @@ where
 }
 
 /// 解析错误响应
-pub(crate) fn parse_error_response<T>(text: &str) -> Result<T> {
+pub(crate) fn parse_error_response<T>(text: &str) -> AnyResult<T> {
     if let Ok(err) = serde_json::from_str::<ErrorResponse>(text) {
         bail!(err)
     } else {

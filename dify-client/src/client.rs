@@ -33,7 +33,7 @@ use super::{
     api::Api,
     http::{header, multipart, Method, Request, Response},
 };
-use anyhow::{bail, Result};
+use anyhow::{bail, Result as AnyResult};
 use std::{sync::Arc, time::Duration};
 
 #[derive(Clone, Debug)]
@@ -161,7 +161,12 @@ impl Client {
     ///
     /// # Panics
     /// Panics if the method is not supported.
-    pub(crate) fn create_request<T>(&self, url: String, method: Method, data: T) -> Result<Request>
+    pub(crate) fn create_request<T>(
+        &self,
+        url: String,
+        method: Method,
+        data: T,
+    ) -> AnyResult<Request>
     where
         T: serde::Serialize,
     {
@@ -194,7 +199,7 @@ impl Client {
         &self,
         url: String,
         form_data: multipart::Form,
-    ) -> Result<Request> {
+    ) -> AnyResult<Request> {
         let r = self.http_client.post(url).multipart(form_data).build()?;
         Ok(r)
     }
@@ -206,7 +211,7 @@ impl Client {
     ///
     /// # Returns
     /// A `Result` containing the response or an error.
-    pub(crate) async fn execute(&self, request: Request) -> Result<Response> {
+    pub(crate) async fn execute(&self, request: Request) -> AnyResult<Response> {
         self.http_client.execute(request).await.map_err(Into::into)
     }
 }
