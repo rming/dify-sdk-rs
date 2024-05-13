@@ -57,12 +57,12 @@ use super::{
         parse_error_response, parse_response, AudioToTextResponse, ChatMessagesResponse,
         CompletionMessagesResponse, ConversationsResponse, FilesUploadResponse, MessagesResponse,
         MessagesSuggestedResponse, MetaResponse, ParametersResponse, ResultResponse,
-        SseMessageEvent, SseMessageEventStream, WorkflowsRunResponse,
+        SseMessageEventStream, WorkflowsRunResponse,
     },
 };
 use anyhow::{bail, Result as AnyResult};
 use eventsource_stream::Eventsource;
-use futures::stream::{Stream, StreamExt};
+use futures::stream::Stream;
 use std::fmt::{Display, Formatter, Result as FmtResult};
 
 /// API 路径
@@ -246,22 +246,29 @@ impl<'a> Api<'a> {
     }
 
     /// Sends a chat message request to the Dify API and returns the response as a stream.
-    /// The callback function is called for each event in the stream.
-    /// The callback function should return `Some(T)` if the event is processed successfully, otherwise `None`.
-    /// The function returns a vector of the processed events.
-    /// The stream is stopped when the callback function returns an error or the stream ends.
     ///
     /// # Arguments
-    ///
     /// * `req_data` - The chat message request data.
-    /// * `callback` - The callback function to process the stream events.
     ///
     /// # Returns
     /// A `Result` containing SSE message event stream or an error.
     ///
     /// # Errors
     /// Returns an error if the request cannot be created or the stream fails.
-    // pub async fn chat_messages_stream(&self, mut req_data: ChatMessagesRequest) {
+    ///
+    /// # Stream response usage
+    /// ```ignore
+    /// while let Some(event) = stream.next().await {
+    ///     match event {
+    ///         Ok(event) => {
+    ///             println!("event: {:?}", event);
+    ///         }
+    ///         Err(error) => {
+    ///             eprintln!("Failed to receive event: {}", error);
+    ///         }
+    ///     }
+    /// }
+    /// ```
     pub async fn chat_messages_stream(
         &self,
         mut req_data: ChatMessagesRequest,
@@ -272,6 +279,7 @@ impl<'a> Api<'a> {
         let resp = self.send(req).await?;
         let stream = resp.bytes_stream().eventsource();
         let s = SseMessageEventStream::new(stream);
+
         Ok(s)
     }
 
@@ -628,49 +636,26 @@ impl<'a> Api<'a> {
     }
 
     /// Sends a request to run workflows from the Dify API and returns the response as a stream.
-    /// The callback function is called for each event in the stream.
-    /// The callback function should return `Some(T)` if the event is processed successfully, otherwise `None`.
-    /// The function returns a vector of the processed events.
-    /// The stream is stopped when the callback function returns an error or the stream ends.
     ///
     /// # Arguments
     /// * `req_data` - The workflows run request data.
-    /// * `callback` - The callback function to process the stream events.
     ///
     /// # Returns
-    /// A `Result` containing the processed events or an error.
+    /// A `Result` containing SSE message event stream or an error.
     ///
     /// # Errors
     /// Returns an error if the request cannot be created or the stream fails.
-    pub async fn workflows_run_stream<F, T>(
+    pub async fn workflows_run_stream(
         &self,
         mut req_data: WorkflowsRunRequest,
-        callback: F,
-    ) -> AnyResult<Vec<T>>
-    where
-        F: Fn(SseMessageEvent) -> AnyResult<Option<T>> + Send + Sync,
-    {
+    ) -> AnyResult<SseMessageEventStream<impl Stream<Item = Result<Bytes, reqwest::Error>>>> {
         req_data.response_mode = ResponseMode::Streaming;
 
         let req = self.create_workflows_run_request(req_data)?;
         let resp = self.send(req).await?;
-        let mut stream = resp.bytes_stream().eventsource();
-
-        let mut ret: Vec<T> = Vec::new();
-        while let Some(event) = stream.next().await {
-            let event = event?;
-            if event.event == "message" {
-                match serde_json::from_str::<SseMessageEvent>(&event.data) {
-                    Ok(msg_event) => {
-                        if let Some(answer) = callback(msg_event)? {
-                            ret.push(answer);
-                        }
-                    }
-                    Err(e) => bail!("data: {}, error: {}", event.data, e),
-                };
-            }
-        }
-        Ok(ret)
+        let stream = resp.bytes_stream().eventsource();
+        let s = SseMessageEventStream::new(stream);
+        Ok(s)
     }
 
     /// Sends a request to stop stream workflows from the Dify API and returns the response.
@@ -724,49 +709,26 @@ impl<'a> Api<'a> {
     }
 
     /// Sends a request to create completion messages from the Dify API and returns the response as a stream.
-    /// The callback function is called for each event in the stream.
-    /// The callback function should return `Some(T)` if the event is processed successfully, otherwise `None`.
-    /// The function returns a vector of the processed events.
-    /// The stream is stopped when the callback function returns an error or the stream ends.
     ///
     /// # Arguments
     /// * `req_data` - The completion messages request data.
-    /// * `callback` - The callback function to process the stream events.
     ///
     /// # Returns
-    /// A `Result` containing the processed events or an error.
+    /// A `Result` containing SSE message event stream or an error.
     ///
     /// # Errors
     /// Returns an error if the request cannot be created or the stream fails.
-    pub async fn completion_messages_stream<F, T>(
+    pub async fn completion_messages_stream(
         &self,
         mut req_data: CompletionMessagesRequest,
-        callback: F,
-    ) -> AnyResult<Vec<T>>
-    where
-        F: Fn(SseMessageEvent) -> AnyResult<Option<T>> + Send + Sync,
-    {
+    ) -> AnyResult<SseMessageEventStream<impl Stream<Item = Result<Bytes, reqwest::Error>>>> {
         req_data.response_mode = ResponseMode::Streaming;
 
         let req = self.create_completion_messages_request(req_data)?;
         let resp = self.send(req).await?;
-        let mut stream = resp.bytes_stream().eventsource();
-
-        let mut ret: Vec<T> = Vec::new();
-        while let Some(event) = stream.next().await {
-            let event = event?;
-            if event.event == "message" {
-                match serde_json::from_str::<SseMessageEvent>(&event.data) {
-                    Ok(msg_event) => {
-                        if let Some(answer) = callback(msg_event)? {
-                            ret.push(answer);
-                        }
-                    }
-                    Err(e) => bail!("data: {}, error: {}", event.data, e),
-                };
-            }
-        }
-        Ok(ret)
+        let stream = resp.bytes_stream().eventsource();
+        let s = SseMessageEventStream::new(stream);
+        Ok(s)
     }
 
     /// Sends a request to stop stream completion messages from the Dify API and returns the response.

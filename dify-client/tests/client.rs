@@ -91,42 +91,82 @@ async fn test_chat_message_stream() {
         ..Default::default()
     };
 
-    let result = client.api().chat_messages_stream(msg).await;
-    // println!("{:?}", result);
-    assert!(result.is_ok());
-    let mut events = result.unwrap();
-    while let Some(event) = events.next().await {
-        println!("{:?}", event);
+    let mut stream = client
+        .api()
+        .chat_messages_stream(msg)
+        .await
+        .expect("stream completion messages failed");
+
+    let mut outputs = Vec::new();
+    while let Some(event) = stream.next().await {
+        let event = event.expect("stream mssage event failed");
+        match event {
+            response::SseMessageEvent::Message { answer, .. } => {
+                println!("answer: {:?}", answer);
+                outputs.push(answer);
+            }
+            response::SseMessageEvent::Error { message, .. } => {
+                eprint!("error event: {}", message)
+            }
+            _ => {
+                let event_name = serde_json::json!(event)
+                    .get("event")
+                    .map(|v| v.to_string())
+                    .unwrap_or("unknown".into());
+                println!(
+                    "debug: skip dify message event: {}",
+                    event_name.trim_matches('"')
+                );
+            }
+        }
     }
+
+    let outputs = outputs.concat();
+    println!("outputs: {}", outputs);
 }
 
-// #[tokio::test]
-// async fn test_chat_message_stream_agent() {
-//     let client = get_client(Some("app-iTiQkNf5LUbMq0mG0QdxXTob"));
-//     let msg = request::ChatMessagesRequest {
-//         query: "write a story in 100 words about life".into(),
-//         user: "afa".into(),
-//         ..Default::default()
-//     };
+#[tokio::test]
+async fn test_chat_message_stream_agent() {
+    let client = get_client(Some("app-iTiQkNf5LUbMq0mG0QdxXTob"));
+    let msg = request::ChatMessagesRequest {
+        query: "write a story in 100 words about life".into(),
+        user: "afa".into(),
+        ..Default::default()
+    };
 
-//     let result = client
-//         .api()
-//         .chat_messages_stream(msg, |e| {
-//             println!("{:?}", e);
-//             match e {
-//                 response::SseMessageEvent::AgentMessage { answer, .. } => {
-//                     return Ok(Some(answer));
-//                 }
-//                 _ => Ok(None),
-//             }
-//         })
-//         .await;
-//     println!("{:?}", result);
-//     assert!(result.is_ok());
-//     let answers = result.unwrap();
-//     let answer = answers.concat();
-//     println!("{:?}", answer);
-// }
+    let mut stream = client
+        .api()
+        .chat_messages_stream(msg)
+        .await
+        .expect("stream agent chat messages failed");
+
+    let mut outputs = Vec::new();
+    while let Some(event) = stream.next().await {
+        let event = event.expect("stream mssage event failed");
+        match event {
+            response::SseMessageEvent::AgentMessage { answer, .. } => {
+                println!("answer: {:?}", answer);
+                outputs.push(answer);
+            }
+            response::SseMessageEvent::Error { message, .. } => {
+                eprint!("error event: {}", message)
+            }
+            _ => {
+                let event_name = serde_json::json!(event)
+                    .get("event")
+                    .map(|v| v.to_string())
+                    .unwrap_or("unknown".into());
+                println!(
+                    "debug: skip dify message event: {}",
+                    event_name.trim_matches('"')
+                );
+            }
+        }
+    }
+
+    let outputs = outputs.concat();
+    println!("outputs: {}", outputs);
+}
 
 fn assert_chat_message_result(result: Result<response::ChatMessagesResponse>) {
     if let Err(e) = result {
@@ -370,27 +410,44 @@ Chatflow is set to overtake "expert mode" in current Chatbot apps. You may choos
         ..Default::default()
     };
 
-    let result = client
+    let mut stream = client
         .api()
-        .workflows_run_stream(msg, |e| {
-            println!("{:?}", e);
-            match e {
-                response::SseMessageEvent::WorkflowFinished { data, .. } => {
-                    let output = data
-                        .outputs
-                        .map(|o| o["output"].as_str().map(|s| s.to_owned()))
-                        .flatten();
-                    Ok(output)
-                }
-                _ => Ok(None),
+        .workflows_run_stream(msg)
+        .await
+        .expect("stream workflows run failed");
+
+    let mut outputs = Vec::new();
+    while let Some(event) = stream.next().await {
+        let event = event.expect("stream mssage event failed");
+        // println!("{:?}", event);
+        match event {
+            response::SseMessageEvent::WorkflowFinished { data, .. } => {
+                let output = data
+                    .outputs
+                    .map(|o| o["output"].as_str().map(|s| s.to_owned()))
+                    .flatten()
+                    .unwrap_or_default();
+                println!("output: {:?}", output);
+                outputs.push(output);
             }
-        })
-        .await;
-    println!("{:?}", result);
-    assert!(result.is_ok());
-    let outputs = result.unwrap();
+            response::SseMessageEvent::Error { message, .. } => {
+                eprint!("error event: {}", message)
+            }
+            _ => {
+                let event_name = serde_json::json!(event)
+                    .get("event")
+                    .map(|v| v.to_string())
+                    .unwrap_or("unknown".into());
+                println!(
+                    "debug: skip dify message event: {}",
+                    event_name.trim_matches('"')
+                );
+            }
+        }
+    }
+
     let outputs = outputs.concat();
-    println!("{:?}", outputs);
+    println!("outputs: {:?}", outputs);
 }
 
 #[tokio::test]
@@ -445,23 +502,38 @@ async fn test_completion_messages_stream() {
         ..Default::default()
     };
 
-    let result = client
+    let mut stream = client
         .api()
-        .completion_messages_stream(msg, |e| {
-            println!("{:?}", e);
-            match e {
-                response::SseMessageEvent::Message { answer, .. } => {
-                    return Ok(Some(answer));
-                }
-                _ => Ok(None),
+        .completion_messages_stream(msg)
+        .await
+        .expect("stream completion messages failed");
+
+    let mut outputs = Vec::new();
+    while let Some(event) = stream.next().await {
+        let event = event.expect("stream mssage event failed");
+        match event {
+            response::SseMessageEvent::Message { answer, .. } => {
+                println!("answer: {:?}", answer);
+                outputs.push(answer);
             }
-        })
-        .await;
-    println!("{:?}", result);
-    assert!(result.is_ok());
-    let answers = result.unwrap();
-    let answers = answers.concat();
-    println!("{:?}", answers);
+            response::SseMessageEvent::Error { message, .. } => {
+                eprint!("error event: {}", message)
+            }
+            _ => {
+                let event_name = serde_json::json!(event)
+                    .get("event")
+                    .map(|v| v.to_string())
+                    .unwrap_or("unknown".into());
+                println!(
+                    "debug: skip dify message event: {}",
+                    event_name.trim_matches('"')
+                );
+            }
+        }
+    }
+
+    let outputs = outputs.concat();
+    println!("outputs: {}", outputs);
 }
 
 #[tokio::test]
