@@ -8,7 +8,7 @@ To add `dify-client` to your package, add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-dify-client = "0.2"
+dify-client = "0.3"
 ```
 
 ## Test
@@ -33,6 +33,5 @@ cargo test
 To generate the documentation, run:
 
 ```sh
-# cargo clean --doc
-cargo doc --no-deps --lib  --document-private-items --open
+cargo doc --no-deps --lib --open
 ```
