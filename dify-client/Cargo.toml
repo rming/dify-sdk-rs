@@ -1,6 +1,6 @@
 [package]
 name = "dify-client"
-version = "0.3.0"
+version = "0.3.1"
 edition = "2021"
 description = "A client for the Dify API"
 license = "Apache-2.0"
@@ -16,7 +16,11 @@ bytes = "1"
 eventsource-stream = "0.2"
 futures = "0.3"
 infer = "0.15"
-reqwest = { version = "0.12", features = ["json", "multipart", "stream"] }
+reqwest = { version = "0.12", default-features = false, features = [
+    "json",
+    "multipart",
+    "stream",
+] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 serde_with = "3.7"
@@ -24,3 +28,8 @@ pin-project-lite = "0.2"
 
 [dev-dependencies]
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+
+[features]
+default = ["default-tls"]
+default-tls = ["reqwest/default-tls"]
+rustls-tls = ["reqwest/rustls-tls"]

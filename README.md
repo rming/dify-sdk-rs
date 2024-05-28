@@ -11,6 +11,13 @@ To add `dify-client` to your package, add the following to your `Cargo.toml`:
 dify-client = "0.3"
 ```
 
+By default, the library uses the `default-tls` feature, which uses the `reqwest` crate with the default TLS backend. If you want to use the `rustls` TLS backend, you can enable the `rustls-tls` feature (which avoids depending on native libraries like `openssl`):
+
+```toml
+[dependencies]
+dify-client = { version = "0.3", default-features = false, features = ["rustls-tls"] }
+```
+
 ## Test
 
 To run the tests, you need to set the `DIFY_API_KEY` and `DIFY_BASE_URL` environment variables.
