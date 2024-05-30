@@ -9,6 +9,7 @@ homepage = "https://docs.dify.ai"
 documentation = "https://docs.rs/dify-client"
 categories = ["api-bindings", "web-programming::http-client"]
 keywords = ["dify", "sdk", "llm", "api", "async"]
+rust-version = "1.65.0"
 
 [dependencies]
 anyhow = "1.0"
